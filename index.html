@@ -3,25 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Math lessons and puzzles for grades 1 to 12. Pass each stop to unlock the next.">
+<meta name="description" content="Math lessons and puzzles for grades 1 to 12. Pass each stop to unlock the next, with maze breaks along the way.">
 <title>Math Trail</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700;800&display=swap">
 <style>
 /* Layout: one centered column. Home is a grid of grade cards; a grade is a winding trail of stops;
-   a puzzle is a single card with a heads-up bar (progress dots and hearts) above it. */
+   a puzzle is a single card with a heads-up bar (progress dots and hearts) above it.
+   A maze break widens the column: the board takes the left, the mission, checklist and arrows sit on the right.
+   On a phone the maze stacks: mission, board, checklist, arrows. */
 :root{
   --bg:#eef3ea; --surface:#fbfdf8; --ink:#1d2a2e; --muted:#566669; --line:#cbd6c9; --on-accent:#ffffff;
   --band1:#23794a; --band2:#c9461f; --band3:#14709f; --band4:#5546cf;
   --good:#1c8748; --bad:#cf2e24; --star:#c98a00;
+  --board:#fffef8; --wall:#22353a; --door-a:#cf2e24; --door-b:#1c66c4; --door-c:#1c8748; --door-d:#7e3bbd;
   --accent:var(--band1);
   --font-display:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",sans-serif;
   --font-body:"Nunito","Avenir Next","Segoe UI",sans-serif;
+  --font-emoji:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#131b1e; --surface:#1b262a; --ink:#edf2ec; --muted:#9db0ae; --line:#31434a; --on-accent:#10181b;
     --band1:#62d394; --band2:#ff9068; --band3:#62c0f2; --band4:#aaa0ff;
     --good:#5fd08e; --bad:#ff7b70; --star:#ffc94a;
+    --board:#202d32; --wall:#dfe8e1; --door-a:#ff7b70; --door-b:#6fb0ff; --door-c:#5fd08e; --door-d:#c79bff;
     color-scheme:dark;
   }
 }
@@ -29,12 +34,17 @@
   --bg:#131b1e; --surface:#1b262a; --ink:#edf2ec; --muted:#9db0ae; --line:#31434a; --on-accent:#10181b;
   --band1:#62d394; --band2:#ff9068; --band3:#62c0f2; --band4:#aaa0ff;
   --good:#5fd08e; --bad:#ff7b70; --star:#ffc94a;
+  --board:#202d32; --wall:#dfe8e1; --door-a:#ff7b70; --door-b:#6fb0ff; --door-c:#5fd08e; --door-d:#c79bff;
   color-scheme:dark;
 }
 [data-band="1"]{--accent:var(--band1)}
 [data-band="2"]{--accent:var(--band2)}
 [data-band="3"]{--accent:var(--band3)}
 [data-band="4"]{--accent:var(--band4)}
+[data-k="A"]{--dk:var(--door-a)}
+[data-k="B"]{--dk:var(--door-b)}
+[data-k="C"]{--dk:var(--door-c)}
+[data-k="D"]{--dk:var(--door-d)}
 
 *{box-sizing:border-box}
 html{background:var(--bg)}
@@ -43,6 +53,7 @@ h1,h2,h3,p,ul,ol{margin:0}
 ul,ol{list-style:none;padding:0}
 button{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app.wide{max-width:1080px}
 .app{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:14px 40px;display:flex;flex-direction:column;gap:20px}
 
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -87,12 +98,23 @@ h1{font:600 clamp(28px,5vw,38px)/1.12 var(--font-display);text-wrap:balance}
 .st{font-size:18px;letter-spacing:2px;line-height:1}
 .st i{font-style:normal;color:var(--line)}
 
+.stop.brk{background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.stop.brk .pin,.stop.brk.done .pin,.stop.brk.open .pin{border-radius:14px;background:var(--surface);border-color:var(--line);color:inherit;font:400 24px/1 var(--font-emoji)}
+.stop.brk.open .pin,.stop.brk.done .pin{border-color:var(--accent)}
+.stop.brk.locked .pin{filter:grayscale(1)}
+.brk-best{font-size:13.5px;font-weight:800;color:var(--good)}
+
 /* lesson and result */
 .panel{background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px}
 .tip{font-size:19px;line-height:1.55;max-width:62ch}
 .rules{color:var(--muted)}
 .bigstars{font-size:44px;letter-spacing:6px;line-height:1}
 .bigstars i{font-style:normal;color:var(--line)}
+
+.reward{border:2px solid var(--accent);border-radius:14px;padding:14px 16px;background:color-mix(in srgb,var(--accent) 10%,var(--surface));display:flex;flex-direction:column;gap:8px}
+.reward h2{font:600 23px/1.2 var(--font-display)}
+.reward p{max-width:60ch}
+.emo{font-family:var(--font-emoji);font-weight:400}
 
 /* full lessons */
 .lesson{gap:18px}
@@ -165,6 +187,73 @@ h1{font:600 clamp(28px,5vw,38px)/1.12 var(--font-display);text-wrap:balance}
 @keyframes pop{50%{transform:scale(1.06)}}
 @media (prefers-reduced-motion: reduce){.shake,.pop{animation:none}}
 
+/* maze breaks */
+.mz{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,310px);grid-template-areas:"stage info" "stage list" "stage controls";grid-template-rows:auto auto 1fr;gap:16px 26px;align-items:start}
+.mz-info{grid-area:info;display:flex;flex-direction:column;gap:6px}
+.mz-info h1{font-size:clamp(26px,4vw,32px)}
+.mz-ends{font-weight:700}
+.mz-ends span,.mz-chip .e,.mz-haul{font-family:var(--font-emoji);font-weight:400}
+.mz-rule{font-weight:700;display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.mz-stage{grid-area:stage;position:relative;width:100%;justify-self:center;max-width:max(260px,min(700px,calc(var(--cols,18) * 58px),calc((100vh - 150px) * var(--ar,1))))}
+.mz-scroller{overflow:auto;border-radius:10px;max-height:max(340px,calc(100vh - 110px));background:var(--board);overscroll-behavior:contain}
+.mz-board{display:block;width:100%;min-width:calc(var(--cols,18) * 15px);height:auto;background:var(--board);touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+.mz-list{grid-area:list;display:flex;flex-direction:column;gap:10px}
+.mz-count{font-weight:800;font-variant-numeric:tabular-nums}
+.mz-chips{display:flex;flex-wrap:wrap;gap:8px}
+.mz-chip{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 8px;border:2px solid var(--line);border-radius:999px;font-weight:700;font-size:14px;line-height:1.3;background:var(--surface)}
+.mz-chip .e{font-size:20px;line-height:1;filter:grayscale(1);opacity:.55}
+.mz-chip.got{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.mz-chip.got .e{filter:none;opacity:1}
+.mz-chip .tick{width:16px;height:16px;border-radius:5px;border:2px solid var(--muted);flex:none;position:relative}
+.mz-chip.got .tick{background:var(--accent);border-color:var(--accent)}
+.mz-chip.got .tick::after{content:"";position:absolute;left:3px;top:0;width:4px;height:8px;border:solid var(--on-accent);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.mz-kb,.mz-db{display:inline-grid;place-items:center;width:20px;height:20px;font-weight:800;font-size:12px;line-height:1;flex:none}
+.mz-kb{border-radius:50%;border:2.5px solid var(--dk);color:var(--dk);background:var(--board)}
+.mz-db{border-radius:4px;background:var(--dk);color:var(--on-accent)}
+.mz-say{min-height:3em;font-weight:700}
+.mz-controls{grid-area:controls;display:flex;flex-wrap:wrap;gap:16px 20px;align-items:center}
+.mz-pad{display:grid;grid-template:repeat(3,48px)/repeat(3,48px);gap:4px}
+.mz-pad button{border-radius:12px;border:2px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;touch-action:none}
+.mz-pad button:active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.mz-pad svg{width:20px;height:20px;fill:currentColor}
+.mz-pad .u{grid-area:1/2}.mz-pad .l{grid-area:2/1}.mz-pad .r{grid-area:2/3}.mz-pad .d{grid-area:3/2}
+.mz-acts{display:flex;flex-direction:column;gap:8px}
+.mz-win{position:absolute;inset:0;display:grid;place-items:center;padding:16px;border-radius:10px;background:color-mix(in srgb,var(--board) 82%,transparent)}
+.mz-win>div{background:var(--surface);border:3px solid var(--accent);border-radius:18px;padding:22px 24px;text-align:center;display:flex;flex-direction:column;gap:10px;max-width:360px}
+.mz-win h2{font:600 28px/1.1 var(--font-display)}
+.mz-win .row{justify-content:center}
+.mz-haul{font-size:24px;letter-spacing:3px;line-height:1.3}
+.mz-walls{fill:none;stroke:var(--wall);stroke-linecap:round}
+.mz-tint{fill:var(--accent);opacity:.16}
+.mz-trail{fill:none;stroke:var(--accent);opacity:.38;stroke-linecap:round;stroke-linejoin:round;stroke-width:3.2}
+.mz-hint{fill:none;stroke:var(--bad);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.mz-hint.side{stroke-dasharray:2 2.2}
+.mz-em{font-family:var(--font-emoji);text-anchor:middle;pointer-events:none}
+.mz-ltr{font-family:var(--font-body);font-weight:800;text-anchor:middle;pointer-events:none}
+.mz-door rect{fill:var(--dk)}
+.mz-door .mz-ltr{fill:var(--on-accent)}
+.mz-door.open rect{opacity:.2}
+.mz-door.open .mz-ltr{opacity:0}
+.mz-keyb circle{fill:var(--board);stroke:var(--dk);stroke-width:1.2;transition:opacity .25s}
+.mz-keyb .mz-ltr{fill:var(--dk)}
+.mz-item.got circle{opacity:0}
+.mz-item text{transform-box:fill-box;transform-origin:center;transition:transform .25s,opacity .25s}
+.mz-item.got text{transform:scale(.2);opacity:0}
+.mz-ring{fill:none;stroke:var(--muted);stroke-width:.6;stroke-dasharray:1.4 1.4}
+.mz-mark{fill:none;stroke:var(--accent);stroke-width:.7}
+.mz-goal.open .mz-ring{stroke:var(--accent);stroke-dasharray:none;stroke-width:.8;animation:mzpulse 1.2s ease-in-out infinite}
+.mz-player{transition:transform .11s linear}
+.mz-player circle{fill:var(--accent)}
+@keyframes mzpulse{50%{opacity:.25}}
+@media (prefers-reduced-motion: reduce){.mz-player,.mz-item text{transition:none}.mz-goal.open .mz-ring{animation:none}}
+@media (max-width:760px){
+  .mz{grid-template-columns:minmax(0,1fr);grid-template-areas:"info" "stage" "list" "controls";grid-template-rows:auto}
+  .mz-controls{justify-content:center}
+  .mz-say{min-height:0}
+  .mz-scroller{max-height:58vh}
+  .mz-board{min-width:calc(var(--cols,18) * 22px)}
+}
+
 /* fractions and figures */
 .fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.82em;line-height:1.12;margin:0 .12em}
 .fr span:first-child{border-bottom:.09em solid currentColor;padding:0 .2em}
@@ -193,7 +282,6 @@ sup{font-size:.62em;line-height:0}
 </style>
 </head>
 <body>
-
 <div class="app" id="app" data-band="1">
     <header class="top">
       <button class="brand" id="homeBtn" type="button">Math <span>Trail</span></button>
@@ -1358,7 +1446,321 @@ sup{font-size:.62em;line-height:0}
   });
 })();
 
-/* Math Trail - the game: screens, puzzle play, hearts, stars and saved progress. */
+/* Math Trail - maze breaks. 36 pick-it-up mazes, three per grade, easiest first.
+   Maze (grade - 1) * 3 + n is break n of that grade (n = 0, 1, 2).
+   open:     one string per row, one hex digit per square. Bits say which sides are open: 1 up, 2 right, 4 down, 8 left.
+   items:    things to pick up. An item with "key" opens the door with the same letter.
+   path:     the way from start to finish as compass letters (N E S W). branches: [row, col, letters] side trips to items.
+   walk:     the fewest steps that pick up everything and reach the finish. */
+MT.mazes = [
+{"title":"Park Cleanup","rows":6,"cols":6,"hero":"🧒","goal":"🗑️","goalName":"trash can","mission":"Help Sam pick up all the trash in the park, then take it to the trash can.","start":[0,0],"end":[5,5],"open":["6aec44","1697b9","69292c","56aac5","514695","3abba9"],"items":[{"r":1,"c":2,"e":"🥤","name":"cup"},{"r":2,"c":0,"e":"🍌","name":"banana peel"},{"r":5,"c":2,"e":"🥫","name":"can"}],"path":"EESWSWSSSEEEEE","branches":[],"walk":14},
+{"title":"Fruit Picnic","rows":7,"cols":7,"hero":"🐻","goal":"🧺","goalName":"picnic basket","mission":"Help Bear gather all the fruit, then bring it to the picnic basket.","start":[6,0],"end":[0,6],"open":["6c46aac","5391685","7aec569","3c53d54","6952955","3c3ac3d","2ba83a9"],"items":[{"r":3,"c":1,"e":"🍎","name":"apple"},{"r":5,"c":2,"e":"🍓","name":"strawberry"},{"r":5,"c":6,"e":"🍇","name":"grapes"}],"path":"ENWNENWNEESSSEESEENWNNNENN","branches":[],"walk":26},
+{"title":"Star Catcher","rows":8,"cols":8,"hero":"🚀","goal":"🌍","goalName":"home planet","mission":"Fly the rocket through space, catch every star, then land back on Earth.","start":[0,0],"end":[7,7],"open":["6aaec46c","16c55395","6d393ea9","13aac3ac","6c6afc45","53d41151","5417aabc","3ba92aa9"],"items":[{"r":2,"c":1,"e":"⭐","name":"star"},{"r":5,"c":5,"e":"🌙","name":"moon"},{"r":4,"c":2,"e":"🪐","name":"planet"},{"r":7,"c":1,"e":"🌟","name":"bright star"}],"path":"EEESSWNWSSEEESWWSWNWSSSEEENEEEES","branches":[[4,4,"ES"]],"walk":36},
+{"title":"Recycling Run","rows":9,"cols":9,"hero":"🧒","goal":"♻️","goalName":"recycling bin","mission":"Help Sam collect everything that can be recycled, then drop it in the recycling bin.","start":[8,0],"end":[0,8],"open":["2aaec2c6c","6c2d3c795","53a969545","3ac692b95","6ad16ac45","54169457d","5783c5395","57eab96c5","393a82939"],"items":[{"r":5,"c":5,"e":"🧴","name":"plastic bottle"},{"r":6,"c":4,"e":"🥫","name":"can"},{"r":4,"c":5,"e":"📰","name":"newspaper"},{"r":5,"c":7,"e":"📦","name":"cardboard box"}],"path":"ENEEENWNENEESSENENNNNN","branches":[[7,4,"ENN"]],"walk":28},
+{"title":"Gear Up","rows":10,"cols":10,"hero":"👷","goal":"🏗️","goalName":"job site","mission":"The builder needs all the safety gear before going to the job site. Collect every piece.","start":[0,0],"end":[9,9],"open":["6eaac46c2c","53c45553ed","7c13979295","57eac16aed","5552969695","513c694569","56c13c7954","3d12ed52bd","696e915445","3a93a83939"],"items":[{"r":7,"c":0,"e":"⛑️","name":"hard hat"},{"r":8,"c":2,"e":"🥽","name":"safety glasses"},{"r":9,"c":5,"e":"🧤","name":"gloves"},{"r":5,"c":5,"e":"🦺","name":"safety vest"},{"r":3,"c":9,"e":"🥾","name":"work boots"}],"path":"SSSSSSSESWSEENEENENWNENENEEESSWSSESS","branches":[[8,3,"SEE"]],"walk":42},
+{"title":"Gem Cave","rows":11,"cols":11,"hero":"🦊","goal":"⛺","goalName":"tent","mission":"Help Fox explore the cave, collect every treasure, then get back to the tent.","start":[0,0],"end":[10,10],"open":["46eaaaeaaac","513c46b842d","3ae93bc6969","46fac439694","793839683ad","56eaec7c2a9","393c1557aac","2c6929552e9","6d7a82d3c54","153c6c38555","2bab93aa939"],"items":[{"r":6,"c":1,"e":"💎","name":"gem"},{"r":6,"c":4,"e":"🪙","name":"coin"},{"r":10,"c":3,"e":"👑","name":"crown"},{"r":7,"c":7,"e":"💍","name":"ring"},{"r":4,"c":7,"e":"🔑","name":"key"}],"path":"SSEESWSWSSENESESWSSESENESEEENNWNNEEESWSSSE","branches":[[5,2,"EES"],[6,7,"NWNE"]],"walk":56},
+{"title":"Beach Cleanup","rows":12,"cols":12,"hero":"🐢","goal":"🗑️","goalName":"trash can","mission":"Help Turtle clean the beach. Pick up all the trash, then take it to the trash can.","start":[11,0],"end":[0,11],"open":["6c6aac6c6ac4","5152c3955455","7ab83ac55795","384686b953e9","6ab9692ad294","544692ac3ae9","3f97c683c2bc","6b817d6abc6d","3aaa97fa8395","6ea8297eae85","516c42d14169","3a93ba92bab8"],"items":[{"r":8,"c":6,"e":"🥤","name":"cup"},{"r":5,"c":5,"e":"🧃","name":"juice box"},{"r":6,"c":11,"e":"🛍️","name":"plastic bag"},{"r":4,"c":6,"e":"🥫","name":"can"},{"r":0,"c":9,"e":"🥡","name":"takeout box"}],"path":"EENESEEENNNNEEESENENWNWWNNNNNEESSWSEENNN","branches":[[7,8,"NWNWW"],[4,8,"WW"]],"walk":54},
+{"title":"Veggie Garden","rows":13,"cols":13,"hero":"🐰","goal":"🧺","goalName":"basket","mission":"Help Rabbit harvest every vegetable in the garden, then bring them to the basket.","start":[0,0],"end":[12,12],"open":["6aac2aeae86ac","16e968387e969","69143c2c15294","3c696bc7c56ed","6d3af81539155","556c7aa96ac55","51557aaad43d1","5693feac3d43c","796ad5412d3a9","783c5156c3c2c","52ad12d53a969","7a812e952ec3c","3aaaa92ba93a9"],"items":[{"r":3,"c":0,"e":"🥕","name":"carrot"},{"r":9,"c":1,"e":"🥦","name":"broccoli"},{"r":6,"c":2,"e":"🌽","name":"corn"},{"r":4,"c":5,"e":"🍅","name":"tomato"},{"r":7,"c":8,"e":"🥒","name":"cucumber"},{"r":9,"c":7,"e":"🥔","name":"potato"}],"path":"EEESWWSWSESWSSSSENENNESSENEEEESESSESWWNWSSSEENESEE","branches":[[8,0,"SE"],[6,4,"NNE"]],"walk":60},
+{"title":"Playground Cleanup","rows":14,"cols":14,"hero":"🐶","goal":"🗑️","goalName":"trash can","mission":"Help Puppy clean the playground. Pick up all the trash, then take it to the trash can.","start":[13,0],"end":[0,13],"open":["6c2ec686e82c6c","554517a912ed55","539783aaac5551","3c6d2ac46b97d4","4797aad3bac539","552bc6baac53ac","7d6ed7aac3d685","5151516854792d","56945696939681","538397a968696c","3aaac16a969695","6ae87abc2be945","543c386fac56d5","3b83aa93839139"],"items":[{"r":9,"c":9,"e":"🥤","name":"cup"},{"r":11,"c":5,"e":"🧃","name":"juice box"},{"r":4,"c":1,"e":"🍌","name":"banana peel"},{"r":0,"c":2,"e":"🥫","name":"can"},{"r":4,"c":9,"e":"🛍️","name":"plastic bag"},{"r":3,"c":7,"e":"🥡","name":"takeout box"}],"path":"NNEESESEEENENWWWNWWWWNNNNENNENESEEESEEESENNWWNEENNESSENNNE","branches":[[11,6,"NEENE"],[3,3,"NNNW"],[4,8,"WN"]],"walk":80},
+{"title":"Sorting Center","rows":15,"cols":15,"hero":"🤖","goal":"♻️","goalName":"recycling bin","mission":"Help Robot find every recyclable in the sorting center, then load the recycling bin.","start":[14,0],"end":[0,14],"open":["42aaea842ec2ea8","3aaebeebc53ab84","46a94516bbaa86d","552e93c3eaac6d1","55692eb85687d78","553ac1445541538","552abad3fd783ac","796aac3a97d2e85","5696ad2c69147ad","394383c556ab929","6c3c2ad393aac6c","5543aa96c2ac515","5396c6a956ad7a9","5469396c53c57ac","3b92aa93ba93929"],"items":[{"r":14,"c":8,"e":"🧴","name":"plastic bottle"},{"r":11,"c":9,"e":"🥫","name":"can"},{"r":10,"c":9,"e":"📰","name":"newspaper"},{"r":7,"c":11,"e":"📦","name":"cardboard box"},{"r":3,"c":10,"e":"🥛","name":"glass"},{"r":5,"c":7,"e":"📄","name":"paper"}],"path":"EENENESENEENESSSEENWNEESSENNNNWWWNEEENEENNWWNNWNWWWWNEENNESEENEE","branches":[[12,11,"NWW"],[8,12,"NW"],[3,8,"SSSWN"]],"walk":84},
+{"title":"Tool Hunt","rows":16,"cols":16,"hero":"👷","goal":"🧰","goalName":"toolbox","mission":"The tools are scattered around the shop. Collect every tool, then put them in the toolbox.","start":[0,0],"end":[15,15],"open":["46aaaaeaaaa86ae8","552c6c56aaaad43c","53c3d5796eac3b85","7a969556d52bac6d","52ad2d1513aac391","56c3c56d6aa856a8","1178539156aa93ac","2e947c2e93a86ae9","43e913c56aae947c","3c7846953ac14555","2bfa9547ac3c5551","6856eb952b85553c","52d53ac3ac4557c5","3ef92abaad7b9155","695686c6c7baac51","3813a939392aabb8"],"items":[{"r":2,"c":6,"e":"🔧","name":"wrench"},{"r":1,"c":13,"e":"🔨","name":"hammer"},{"r":3,"c":13,"e":"🪛","name":"screwdriver"},{"r":3,"c":5,"e":"📏","name":"ruler"},{"r":1,"c":2,"e":"🔦","name":"flashlight"},{"r":10,"c":5,"e":"🪚","name":"saw"},{"r":10,"c":6,"e":"🪜","name":"ladder"}],"path":"SSSEENWNNEEEEESSENEEEEENEESESSWSWNWWNWWWSWSSWSWNNNNNWSSWSSESSESESWSSWSEESEEESEEEESEE","branches":[[1,12,"SEN"],[2,4,"WNW"],[11,5,"EN"]],"walk":100},
+{"title":"Treasure Island","rows":18,"cols":18,"hero":"⛵","goal":"🏝️","goalName":"island","mission":"Sail the ship through the reef, collect all the treasure, then land on the island.","start":[17,0],"end":[0,17],"open":["686ac6aeaaac446eec","7abc516946c57d1555","78293a96d57953c555","5686ac453956969515","53abc7956a95696941","52ac53a956c552d2d4","3ac3d6ac393d7ababd","2e94554782c556aa85","696ffb9386d579686d","56913aaaa95152f851","53aeaac6aa96fa9478","14692e93e86956c53c","6d3c41683c12d53b85","152b96f86d2a956ea9","6b86a95697aaa9556c","52e96c53c542c29795","7c3c53d6d396ba8385","13a912b9382baaaaa9"],"items":[{"r":16,"c":7,"e":"🪙","name":"coin"},{"r":17,"c":9,"e":"💎","name":"gem"},{"r":9,"c":7,"e":"👑","name":"crown"},{"r":7,"c":3,"e":"🔑","name":"key"},{"r":3,"c":6,"e":"💍","name":"ring"},{"r":3,"c":8,"e":"🏺","name":"vase"},{"r":9,"c":11,"e":"🧭","name":"compass"},{"r":1,"c":12,"e":"🔱","name":"trident"}],"path":"NESEENWNENEENESSSSENENWNENENWNWNEEENNWSWWWWWNNNNNWNEESSEENNNESENNESSSWWSSENESENNNENNESESWSWSSEENNENNNNEE","branches":[[16,8,"SE"],[8,4,"WN"],[4,5,"EN"],[6,11,"SSS"]],"walk":122},
+{"title":"Park Cleanup","rows":18,"cols":18,"hero":"🧒","goal":"🗑️","goalName":"trash can","mission":"Pick up every piece of trash in the park, then take it to the trash can.","start":[0,0],"end":[17,17],"open":["46ac6aaeaaac2eaaec","57c796c52ec3c38695","79556d1385783aabc5","169553aaa93ac6ac55","29693ac6aaae916d51","4696e813c687ac513c","55453aac57c5413ec1","797baa8555397aad38","7856aae953ac3a856c","3c156c143ac3aac555","6bc397ad6c56ac3d15","3c3c2b83d555456d6d","69692aac53d1579555","543c2c69543c396951","39696d5697abc452bc","2c3c515569683d56ad","6b857c3d16d6c55545","3aab93ab8139393939"],"items":[{"r":9,"c":0,"e":"🍌","name":"banana peel"},{"r":13,"c":1,"e":"🛍️","name":"plastic bag"},{"r":17,"c":6,"e":"📰","name":"newspaper"},{"r":12,"c":4,"e":"🥫","name":"can"},{"r":5,"c":8,"e":"🧃","name":"juice box"},{"r":1,"c":8,"e":"🥤","name":"cup"},{"r":9,"c":12,"e":"🍬","name":"candy wrapper"},{"r":5,"c":15,"e":"🥡","name":"takeout box"}],"path":"SSENNEESSSSWSWSSWSSESESESWSESWSESSENESEENNNENNNNESSENNNWWNNNNWNEEEESSSWNWSSEESEEESESSSWSSSSENNEESS","branches":[[10,1,"WSESWSSEN"],[16,7,"WNNNENWWW"],[4,11,"ENWWNNWW"],[10,15,"NNNNWNNES"]],"walk":168},
+{"title":"Orchard Harvest","rows":20,"cols":20,"hero":"🐻","goal":"🧺","goalName":"basket","mission":"Gather every fruit in the orchard, then bring it all to the basket.","start":[19,0],"end":[0,19],"open":["686c6eaaac2ac6a846ac","7c5393c6c16abbea9785","5552e8393c3aac3c2969","153e92c6852ac3c3ec54","69456a952bae9416d395","7ab93ac52c6bc3ad7869","16c42c7bc51456c13eb8","69556b9293c53d56856c","5453d6aac2bfad3fabd1","553c396ebc6b854546bc","556ba853c512c53bd529","3d3c2a9693ee97c297a8","43c3aea96c538552c56c","7c52c52e9556c53c7951","539695692d557945547c","3ea943bc693952d53955","696a96e956ac3ad3aad1","3c546d5693c56856c6b8","453d55516c53969513ac","3b83913a9392a92baaa9"],"items":[{"r":12,"c":1,"e":"🍉","name":"watermelon"},{"r":8,"c":1,"e":"🍊","name":"orange"},{"r":13,"c":6,"e":"🍑","name":"peach"},{"r":12,"c":6,"e":"🍇","name":"grapes"},{"r":6,"c":3,"e":"🍐","name":"pear"},{"r":12,"c":10,"e":"🍎","name":"apple"},{"r":8,"c":14,"e":"🍒","name":"cherries"},{"r":12,"c":15,"e":"🍓","name":"strawberry"}],"path":"ENNWNENWNNESENNWNWNNNNENESSSESWSESEEEENENWNEESSESSSSENNESENNNNNNNNESSEEENNWNNNESENNENN","branches":[[11,1,"NNN"],[12,5,"SSSENENW"],[9,8,"NWWWSWNWNN"],[8,17,"ESWSSSSWNW"]],"walk":148},
+{"title":"Star Catcher","rows":24,"cols":20,"hero":"🚀","goal":"🌍","goalName":"home planet","mission":"Catch everything floating in space, then land on the planet in the middle.","start":[0,0],"end":[12,10],"open":["6c2aeaaaaaaaaac46aa8","53ac56c6a86ac2bd3aac","56c3b9556c547ac3846d","513c6c5393d51696c395","3ec55396ac53abc53c45","693d3aa94796c69547b9","3c43ac6eb96957a93d68","693aa9156a9453ac43bc","3c2ea8693c2bbaad3c2d","41696ab8294446eb856d","787c52eaac53d516a951","7a93943c453c396bec3c","5686a94553c56ab8556d","55452abd3c153ec69395","5553aeafabc781556869","153ac569683baa93d6d4","696ab97a96c6aac6d13d","3c3ea856a953c4515685","69456c57c692957a93ed","52b9539155686d16ec51","7ac696ea915693a95394","543be956a8796c6e96e9","3fa854556c529553c13c","292a939393baa9383aa9"],"items":[{"r":3,"c":5,"e":"⭐","name":"star"},{"r":1,"c":9,"e":"🪐","name":"planet"},{"r":2,"c":14,"e":"🌙","name":"moon"},{"r":7,"c":11,"e":"🛸","name":"saucer"},{"r":2,"c":17,"e":"🌠","name":"shooting star"},{"r":6,"c":17,"e":"🌞","name":"sun"},{"r":11,"c":17,"e":"☄️","name":"comet"},{"r":15,"c":10,"e":"🌟","name":"bright star"},{"r":17,"c":5,"e":"🛰️","name":"satellite"}],"path":"ESEESEENESSSWNWSSEEENEESENNNNEESEESWSESWSEENNNESESSSEESSWSSESWSWNNWWWSWWSEESSWWWWNWWWNNNWNEEESSE","branches":[[3,10,"WNWSWNNEE"],[6,13,"SEESWWWWN"],[5,17,"EENNNWSWN"],[14,7,"WWSSWWWSEEE"]],"walk":172},
+{"title":"Recycling Run","rows":24,"cols":22,"hero":"🧒","goal":"♻️","goalName":"recycling bin","mission":"Collect everything that can be recycled, then drop it in the recycling bin.","start":[0,0],"end":[23,21],"open":["2ec6c6ac6ae86c2aac6aac","69553943969693c2ad7ac5","5293ac3ec3c7e83ae95691","3ae8696954513ac69453ac","6c3c569455784693c3bc69","5543b96bb93c5386d68154","553aae96ae83d6a93d2c55","53aac14543c4792c6babbd","386c3c53bc53be85546841","6a93a93c293aa96d53bc3c","3aac2c2bc686ea953ea96d","6c6d47aaf9451429696a95","1551552e96b96faa969469","457ad5412d6c556c6be938","7d16d3d6c3d55793bc3aac","13a956bd3ad513eac3aa85","6ac693814693aef83ae845","16d3aaaabfc2ad7ac41695","6d16ac6c6d3ec1383bc569","57a9451795297e86ac3954","17c6d7ad692ed543c7ac3d","45113941144157fa9143c5","53aaaad6ad7e9138447a91","3aaaaa912b93aaaa93baa8"],"items":[{"r":4,"c":7,"e":"📚","name":"old books"},{"r":0,"c":4,"e":"📦","name":"cardboard box"},{"r":6,"c":10,"e":"📄","name":"paper"},{"r":6,"c":15,"e":"✉️","name":"envelope"},{"r":0,"c":14,"e":"📰","name":"newspaper"},{"r":13,"c":13,"e":"🥫","name":"can"},{"r":16,"c":20,"e":"🥛","name":"glass"},{"r":22,"c":16,"e":"🧴","name":"plastic bottle"},{"r":19,"c":13,"e":"🍾","name":"glass bottle"}],"path":"ESWSSEESESENNENWWNNESENEESENEESWSESSSESESENEENESESWSSSESWSWWWSSSESWWWNNNWSSSWSESEESESSEEENWNEESEESESWWSEEE","branches":[[5,4,"ENENENESSSWN"],[7,12,"SESWWWNNWNE"],[5,16,"NWNENENNWWW"],[16,14,"SEESEESENNEN"],[19,12,"SSSWSEEEEEN"]],"walk":220},
+{"title":"Gear Up","rows":26,"cols":22,"hero":"👷","goal":"🏗️","goalName":"job site","mission":"Start in the middle. Collect every piece of safety gear, then go to the job site.","start":[13,11],"end":[25,21],"open":["42c442c6aae8686c6aa86c","3ed792d52c3c7857b86e91","69396a93c56d3e93aad568","56aabac693916d46ec1394","5146aa93eac2d3d553aaed","785546c6b8783c39382c55","7c3bbd79443ae9686c4395","53ac695697ead6d2957c45","56c3d6bb85385516c5153d","5554152c296c53c557abc1","7939456ba853ba9557c438","56c2b956aabeac6d39156c","397a8453ac452b97ac6d55","6c56a93ac557ac41411395","513baaac5553c152feaaad","5446eea953f83c3c13c6c5","793d116c7c3c45696c3951","56abae9513a9517a93ac7c","796ea947a82efabc6a8555","52956c396ac53e8796c395","56c393ea94116d29695681","5516aa96af8693aa9453ac","556bc6ab816946c6ad56c5","555693c6aa92f93b857979","3d152e93c6ac16aaab9454","2b83abaa9383a92aaaabb9"],"items":[{"r":0,"c":11,"e":"🔦","name":"flashlight"},{"r":5,"c":7,"e":"🧯","name":"extinguisher"},{"r":0,"c":4,"e":"😷","name":"dust mask"},{"r":12,"c":1,"e":"🥽","name":"safety glasses"},{"r":25,"c":0,"e":"🧤","name":"gloves"},{"r":17,"c":4,"e":"🎧","name":"ear muffs"},{"r":23,"c":3,"e":"🥾","name":"work boots"},{"r":20,"c":9,"e":"⛑️","name":"hard hat"},{"r":13,"c":14,"e":"🦺","name":"safety vest"},{"r":21,"c":14,"e":"🩹","name":"bandage"}],"path":"NNWNNESENNNNWWNNWWSWSWNWSSWSWNWWNWSSSSSSENESSSEEEEESWWWWSSEESWWSSENESESWWWSESWSSEEEEENWNEEENENENESEEENENESSSSENESSSE","branches":[[4,8,"WNENWNNEEEE"],[6,0,"NNNNENESENEN"],[17,3,"WWSWSSSSSSESW"],[25,5,"NENWNEENEEN"],[20,13,"NWNEENNENWNN"]],"walk":234},
+{"title":"Beach Cleanup","rows":26,"cols":24,"hero":"🐢","goal":"🗑️","goalName":"trash can","mission":"Clean the whole beach. Pick up all the trash, then take it to the trash can.","start":[25,0],"end":[0,23],"open":["6c2eac2c682ec2ec6ac2aaac","1787c3ad7ea93a9792bc6c6d","69693ac395446c416a855395","7c786c52a95397d692e97c45","139693bc2ad6c53fa852d539","6ec3ac6d6c393b83c43c13ac","513aa9539386aeaa97c3c6ad","3c6e8696ac296be8293c53c5","479143e943ac16d686a93a95","792c7ad45683e979692c6ae9","144512fd7d46bc3c56c53c3c","6953ac1553938529553f83c1","5456c3c156eac3c695452c54","79513ad2d5543c7ba9538555","3c52aabe9579697c6a96c555","4556aaafa956fc553aad3955","557baac52c151153aee96abd","3d52c453ad2bac3c6d3c5429","2bbc5554438687c551411568","2ae93d797ae945393c7e83d4","6c7e8396fc7c53c6c5152c3d","5393aaa951557a917ba96969","7aaa86a838157eac16e83c78","7c6eabaac6a95383a93ea93c","1395686855683c6e86c16aa9","2aab92ba93b82b93a93abaa8"],"items":[{"r":18,"c":12,"e":"🧃","name":"juice box"},{"r":18,"c":2,"e":"📰","name":"newspaper"},{"r":18,"c":13,"e":"🍬","name":"candy wrapper"},{"r":22,"c":16,"e":"🥡","name":"takeout box"},{"r":4,"c":17,"e":"🥤","name":"cup"},{"r":8,"c":7,"e":"🍌","name":"banana peel"},{"r":1,"c":0,"e":"🧦","name":"old sock"},{"r":1,"c":11,"e":"🛍️","name":"plastic bag"},{"r":8,"c":20,"e":"🥫","name":"can"},{"r":11,"c":23,"e":"🧴","name":"bottle"}],"path":"EEENNWSWNWNNNESENNENWNNENEEEEEENNNEEESESWSWSSEESESENNWNNNNNWNNWNWNWWNWWSWWNENNENWNNWWNWNEESEESENEEENESEENESENEESESSWSSESESSEENWNEENWWNNWNNESENEN","branches":[[20,2,"ESEEEENENEEENE"],[14,14,"ESSEESWSSESSWS"],[9,12,"ENENWNEEENWNEE"],[1,3,"SWSSWNWNENNWS"],[6,23,"SSSWSES"]],"walk":268},
+{"title":"Veggie Garden","rows":28,"cols":24,"hero":"🐰","goal":"🧺","goalName":"basket","mission":"Harvest every vegetable, then bring them to the basket in the middle.","start":[0,0],"end":[14,12],"open":["6ae86aeaaa86aeaac46c6ae8","3c3a943aaaab83c45795543c","43c2ed2eac6c6c55792d3d69","3c3a93a9695393953ac5697c","6b86aaac543aac47ac551695","7aa92ec53d2c6953c117c3c5","56aaa913abc552f83c293c51","556aeaaaac39543e83aac53c","5556b86ec56c39692ec6b945","39512c513953c47ac557c479","6ad42d3aaa9697b855553d3c","3c53c7a86845696a957943c5","695453aabc3d383ec556d695","12d57aac6bc3c6813d5153c5","42f956c3bc3c13aae93ebc3d","7efa9152a92946ac3ac3c141","513eac3c2aee9543aad43c3c","3c41452d6a916956ac57856d","6d7e95697aeabc3d4557c551","5517ad52d696a9453955393c","5145697855296ad56a952aad","16915692d7ac385792c56c69","696ad3ac1543aad56ed55394","56969469697c685515517ae9","53c3abd696955693a938543c","3a946e93c3c7d3aaaaaa9545","46e953c6bad5546eaaa86bd5","393a92b92a911393aaaab839"],"items":[{"r":5,"c":18,"e":"🥔","name":"potato"},{"r":1,"c":18,"e":"🥬","name":"lettuce"},{"r":12,"c":17,"e":"🥦","name":"broccoli"},{"r":7,"c":16,"e":"🍆","name":"eggplant"},{"r":16,"c":14,"e":"🧅","name":"onion"},{"r":22,"c":9,"e":"🧄","name":"garlic"},{"r":23,"c":13,"e":"🍅","name":"tomato"},{"r":20,"c":4,"e":"🌶️","name":"pepper"},{"r":11,"c":9,"e":"🥕","name":"carrot"},{"r":9,"c":3,"e":"🥒","name":"cucumber"},{"r":7,"c":7,"e":"🌽","name":"corn"}],"path":"EESEENEESEEEEENEEEEESSENENESSSSSESESSWWSSSWNNNWSSSSSSWSEESWWWNWWSSWSWWSWSSSSWSWSESWSWNWNENWWWNENNNENNNNWWWNNNNNNNNNEEEEEEESSWNWWSSEEEENNESESWSSSES","branches":[[2,16,"SEESS"],[13,17,"WNWWNEENNWWNENE"],[16,18,"SSSSWWSWNNNWNN"],[26,8,"EENWNENESSENNE"],[15,2,"EENNEEESENENWNE"],[7,4,"SWS"]],"walk":278},
+{"title":"Sorting Center","rows":28,"cols":26,"hero":"🤖","goal":"♻️","goalName":"recycling bin","mission":"Find every recyclable in the sorting center, then load the recycling bin.","start":[0,0],"end":[27,25],"open":["6aaac6e82eac6c2aeaaec2eac4","3ac4393c694393aeb869569295","683baac396fc46ad6a9453aae9","56ac443ac153938556c556e83c","3bc397a83c3aac693979393aa9","6c3c2d6e83aac792e83ae86ac4","13e96953aaac1542fc6c3c56bd","6a96ba96aaa96bb85557c39385","7c45686d46ac3c6a939156aaad","55553c5155696956ac6a97c6c1","157ba93c515696954552e9393c","6916c6a95695696953943a86a9","7aa957ac53c53c52be83aeebe8","3c6c53853c55693aa92c6d143c","695396c56939546aaaef956969","52bac5557ac693bc6c57c79694","546a9553b853ac695391512bc5","3d568556aafc6b941686b86c79","293d45396a9796afc5294693d4","6ac7d56a96c169693baad54695","3c55397a853e9412ac2c11396d","4557a816a92d2d6c43c3c6c691","553baac3c6aba953d6b85153ac","556ac45697aae85697aed6baad","795697916d6c3ed7816d156c45","54516d6c5153c153ec556b953d","555453d53a96941297d3d2c385","393b9293aaab83aaa9383ab829"],"items":[{"r":2,"c":12,"e":"📄","name":"paper"},{"r":2,"c":17,"e":"📰","name":"newspaper"},{"r":11,"c":22,"e":"🥛","name":"glass"},{"r":10,"c":22,"e":"🧴","name":"plastic bottle"},{"r":19,"c":22,"e":"📦","name":"cardboard box"},{"r":17,"c":9,"e":"📚","name":"old books"},{"r":21,"c":0,"e":"🧃","name":"carton"},{"r":25,"c":3,"e":"🥫","name":"can"},{"r":26,"c":5,"e":"✉️","name":"envelope"},{"r":20,"c":14,"e":"🍾","name":"glass bottle"},{"r":23,"c":14,"e":"📒","name":"notebook"}],"path":"EEEESENESESENENEESENESEEENEEESWSWWSSENESSEESESENNEESESSWWWWSESENESESWWSWWSWSWWWWWWSESWSWWSWNWWWWSWNNNNWSSSSSSWNWSSSEEESSWSSENESSEEEENENWNWSSWWNNENEEESEENNNESESWSSEESENNESSENENNEEEESSSS","branches":[[1,15,"SSSWSWNWWWNNESEN"],[9,21,"SWSEE"],[12,23,"ESESWSWSESSSWSWN"],[22,3,"WNNNWWSESSSSWNNN"],[25,5,"WSSWWNNNNEESWS"],[23,9,"NEENNENENEESWS"]],"walk":346},
+{"title":"Tool Hunt","rows":30,"cols":26,"hero":"👷","goal":"🧰","goalName":"toolbox","mission":"Start in the middle of the shop. Collect every tool, then put them in the toolbox.","start":[15,13],"end":[29,25],"open":["2aae86eaa86c6ec6ac6ac2aeac","6aa96956ac53957969783ac3c1","56aab83b8396c5145456ec7c3c","5546c6c6c6c5556939551113c5","7955395539553956ac796c6c55","5453c2b9469546954556955555","3d787ac6d56953e9797bc5553d","295456951796d4783c169393c1","6ab9156ba9693d3c696d2ec454","7e8685146abe87853e91453d39","5783ad6916c7c169696c7d6bac","13c2c3d469793c3c7ad3953ac5","6c7abc55543a8569383ac7c455","557c2d5793aec396eaac153955","5393c1552ae938453c43e96a95","52ec147baa96ae93c7b85692e9","3c51697ac6a943ac516c53a854","6954543c53c2fac53a955682d5","7a93fd69383c16d786c53bac39","7aaad3bc2ec3a917a957aec3ac","16e87c452d3ac4416e916d5685","693c5579696c555693aa913bc1","3c45517a969395556842aae878","693b94382b846d53947c6c7c54","56ac456aa869557c691513d395","794157946c3a93d796c7a8146d","52fad78397a86c51693baac7d5","3c1697aaabaa93d6946aaad151","43ebc3aec6846c39693ae83abc","3ab83aa93bab912abaaa92aaa9"],"items":[{"r":24,"c":20,"e":"🧲","name":"magnet"},{"r":19,"c":19,"e":"🪛","name":"screwdriver"},{"r":17,"c":23,"e":"📏","name":"ruler"},{"r":11,"c":20,"e":"🪣","name":"bucket"},{"r":2,"c":15,"e":"🔦","name":"flashlight"},{"r":10,"c":14,"e":"🔌","name":"plug"},{"r":15,"c":7,"e":"🔧","name":"wrench"},{"r":8,"c":4,"e":"🔨","name":"hammer"},{"r":22,"c":1,"e":"🔩","name":"bolt"},{"r":25,"c":2,"e":"📐","name":"square"},{"r":27,"c":12,"e":"🪜","name":"ladder"},{"r":23,"c":11,"e":"🪚","name":"saw"}],"path":"SEESSSEENESSWSEEENENWWNNNWSWWNNWNNEEEESEENNNNWSWNWSWWNENWNENWNENNWWSSWSSESSWSESWSWNNWNWSWNWSWSSWSSWSSESWSWNWSSSSSWNNWNWSWSESWSSSSESEEESEEENWWNEEEEEEENESESENENENESEEEESSEEES","branches":[[19,21,"ESSEESSSWNWSWNWS"],[10,21,"NNESESEESSSSSWSSW"],[6,14,"WNENNEN"],[15,6,"NNNNWNNNNENWWSS"],[28,3,"NENWWN"],[27,14,"NNWNNWSSWWNEN"]],"walk":320},
+{"title":"Treasure Island","rows":30,"cols":28,"hero":"⛵","goal":"🏝️","goalName":"island","mission":"Sail through the reef, collect all the treasure, then land on the island.","start":[29,0],"end":[0,27],"open":["46ea86aaaaaaaaaaaac2eaeac2e8","5556c3aaaaaaac2ea83c56943c7c","79553aaec6a869696e85152bc515","54396ac5396c56ba93c3abc693c5","3bc2bc53aa9553aaac3aaa93aad5","683ac53ac6a93c2ac546aaaaac3d","52aeb96a93aead6a95556aa84385","3c45683eaa854392eb9556ae96c1","695152a96aabbaac38693d69693c","7c3c546abaaaac456ad6a93c16c5","556bbfd6aaaac3d792d3aac52d55","13bac5552aac52916c3aac53a915","6c2e95556ac53c6a97c2a956c6c5","552969157c3d6938295686b9553d","556c3c6915293aeaec3d6bc43969","5553ad56c56aac3853c3d6956c3c","513c2939555443a87c3a93c79785","3ac56ac6f95556a85146aad143c5","6c5552b916953fc6ba93c2d6b839","5393946ac3ad2d796ac2d293eac4","7c6aad543ac3c156947c3aac783d","53968393ac7a92b96b93eac396a9","3c2fac6ec53c6aea96869452abac","43c3839555697c56c3c3c53ac469","5696aaa9553e957d5696956a953c","792bc682bbc529513b856952ef85","56aab96c6c1786fc2ea93abc5169","792aec5393c38513c3c6aea93abc","3c6c5792ec16c3ac145383ac6a85","2b9393aa93813aa92bbaaa8392a9"],"items":[{"r":20,"c":9,"e":"🏺","name":"vase"},{"r":16,"c":15,"e":"🧭","name":"compass"},{"r":29,"c":11,"e":"🔑","name":"key"},{"r":16,"c":16,"e":"👑","name":"crown"},{"r":19,"c":21,"e":"📜","name":"map"},{"r":11,"c":8,"e":"⚓","name":"anchor"},{"r":18,"c":7,"e":"🔱","name":"trident"},{"r":9,"c":7,"e":"💰","name":"money bag"},{"r":12,"c":19,"e":"🪙","name":"coin"},{"r":5,"c":14,"e":"🔮","name":"crystal ball"},{"r":0,"c":17,"e":"💍","name":"ring"},{"r":1,"c":17,"e":"💎","name":"gem"}],"path":"ENWNNNENENWNWNNESENEEESENNEESEESSESWSEENNEEEENEENNWWSWSWNNENENNNNWWWWNENWNNWWWWWSSSSWSSENESSWSWNWWSSWNNNWNNESEENWNENNNENEENEEENNEENWNNNENWWWWWWWWNEEEEEEEEEEEEESESSEENNENEESESSESSENNNNWNE","branches":[[21,10,"EENWNWWNENNNEEESEE"],[22,14,"SSSSWSSEESWWWNWS"],[14,16,"ESESEENNEESWSESSSW"],[17,8,"ENNNNWNEESENNWWW"],[8,11,"EEEESSENEESSEEESWW"],[6,13,"SENEENWW"],[3,21,"ESWWWWNWNWSWWNENEE"]],"walk":410},
+{"title":"River Cleanup","rows":32,"cols":28,"hero":"🦆","goal":"🗑️","goalName":"trash can","mission":"Clear all the trash from the river, then take it to the trash can in the middle.","start":[0,0],"end":[16,14],"open":["46aec6c6aaaac686c6c6aeac6a84","39693953c686b96939794543d2ad","6c3aac3c53c3aa92ac3ad556bec5","53aaa9293c7aaac6abc6953d6939","7c6aaaaaad3aac39685783853c6c","13baae8683aaad6c7c112c2d6b95","6eaac143aaac695397c6ad413ac5","53c696b846c53852ed53c3bac695","52d3c52e953d6c1691783ac69569","7c3c53c5694555694696aa93a954","13c152d792bb9396d3c56eaaaa95","6a969697aac2aaad545553c2aae9","78696d296c3aaaa95539543aae94","3c3a956e93c6ec46956c3d46ad6d","43c2a917ac39553bc553c393c3d1","5456aea9692a93c45552d6ea947c","555543ac3ec6e815393c393ac551","53bfbc6929557aabc42946ae953c","56a929146c79142a93c2d3c52d69","796aac479116ad6aac56ba93c53c","7a96a9796e87c13c69552ee857c1","3ac3ae9693c538455479453c793c","2c3c296b8697a8793ffa956d3869","456b8438692d6c56c516c1516c54","53bec52abae9153953c53c54553d","56a957a82e9683ac5455457913c5","556e93ea852bc68553d55556ae95","39552c7aa96ab92b947fd3d54545","2e956bfc46baae86c3953c157955","43c3d457952e83c57c6d2ba95695","7e92d793e96be8115397846c556d","112a93a83a92baaa92aba9139391"],"items":[{"r":4,"c":8,"e":"🍌","name":"banana peel"},{"r":1,"c":10,"e":"🧻","name":"paper roll"},{"r":0,"c":17,"e":"🥫","name":"can"},{"r":4,"c":20,"e":"🥤","name":"cup"},{"r":5,"c":20,"e":"🍟","name":"fries box"},{"r":11,"c":21,"e":"🧦","name":"old sock"},{"r":23,"c":27,"e":"📰","name":"newspaper"},{"r":19,"c":21,"e":"🧴","name":"bottle"},{"r":25,"c":24,"e":"🍬","name":"candy wrapper"},{"r":31,"c":12,"e":"🥡","name":"takeout box"},{"r":20,"c":10,"e":"🛍️","name":"plastic bag"},{"r":21,"c":2,"e":"🎈","name":"balloon"},{"r":15,"c":15,"e":"🧃","name":"juice box"}],"path":"SENEESWSEEESWWWWNWSSESENEEEEEEENWNNWNEEEEESWSEEENENESENESENEEEESESESWSESENESSSSWSSWWWWWSESEEESWWSESWWSEESWWWSESWWWSSWSWSSESSSESSWSWNWSSWWWWNWWSWWNWNNWWWSWNNNENNWWNENWNWWNNENEENNNEEEENNENESESENEESSES","branches":[[4,9,"SEEEENWWWNNWNE"],[1,18,"SEESWSE"],[5,25,"WSEESWSSWWNENWWWNNW"],[17,23,"SSESSENESESWSSEN"],[27,19,"ESESEENNNEEENWNNWSS"],[28,6,"NEEENNENWWNENENWNE"],[14,7,"EESWSEESSENNESEEENN"]],"walk":422},
+{"title":"The Big Job","rows":34,"cols":30,"hero":"👷","goal":"🏠","goalName":"new house","mission":"The biggest maze. Collect all 14 tools, then finish the new house.","start":[0,0],"end":[33,29],"open":["6aaaeaaaaac6aaaaeaea86eaaea86c","52ec56aac6956ac69696a956c16c51","3a95392c55695693c5452c393a97bc","6ac3aac5513c538693956d46aae96d","783ae83d56abd6a96aa953d3c29695","16ac3ac5396c156a92ae92f856a969","692bac396a93a93aeaa96c16952c54","3aac2bae946ac6ac16aa93c5456955","6a87aac7a952d3c3c546ac39557c3d","7ac7ac516c3c3856d57943ec795569","5695293a93c56a95393a9691569554","53c56c6aaa97bc452eaac56a93c53d","3c3b953c44296d7969683d3c2a9569","696ac16953ec513ad2bae9696c6954","3c3c3c7c3a953eac16ac16d2d55695","69692b93c6a9692b8543c516953d2d","16baac6a97ac3ac6c3d693c7c3c3c5","696c453c2bc52ab93a956c393c52bd","3a957943c293ac6aeac5552e853c2d","6c6956b83aac6b96b83953c3c543c5","155293aac6a952af842e943c3bd411","6956c6ea93c43ac16fc52d6baa93ec","5691393aac57aad69153ad56eaaa95","7d2eae86c3916a952ab86939546aa9","57c16bc53aae92c3c6ac56c69552ac","555692b96ac3aa92b96d5553c53ac5","55396aac52bc46aaaad1393c156c55","152ab86956c397ac4296aaa96b9395","6d6aaa92bd56c5693ae96aaa946aad","5396aaac6d39393aac3c56aaab96ad","7ac3c2c553c6ac2c692d556c6aa969","3c3c385556956ba93ac1539556e83c","6943aad3956d386ea83c52a9553e85","3abaa83aa913aa93aaa93aaa9383a9"],"items":[{"r":3,"c":14,"e":"🪚","name":"saw"},{"r":6,"c":10,"e":"🔌","name":"plug"},{"r":8,"c":2,"e":"📏","name":"ruler"},{"r":14,"c":2,"e":"🪜","name":"ladder"},{"r":27,"c":2,"e":"🪣","name":"bucket"},{"r":23,"c":12,"e":"🔩","name":"bolt"},{"r":12,"c":8,"e":"🧲","name":"magnet"},{"r":11,"c":13,"e":"🔧","name":"wrench"},{"r":14,"c":20,"e":"🔨","name":"hammer"},{"r":0,"c":27,"e":"🪛","name":"screwdriver"},{"r":5,"c":26,"e":"📐","name":"square"},{"r":20,"c":21,"e":"💡","name":"light bulb"},{"r":26,"c":24,"e":"⛏️","name":"pick"},{"r":22,"c":29,"e":"🔦","name":"flashlight"}],"path":"EEEESSENEEESSSSENEENWNENNEEEEESWSESWSWWSSWWNWSWWSWWWNWWNWWSWSEEESEEESSEENESESWWWWSESWSSWNWNWWSESWSWSWSEENESSWSSSWSSESSENENEESENNESEEEENEENNWWNNEENEEEESENNNENWNWWSSESWWNWSWNWWNENWNNENWNEENNWNEESESSENNNEEENESESENNENNWNEEEENEESWSWSWWSSSSWSSWWSESWSWSSESENESESSSESWWWWSSENEEEEENESSWWWSSEESSWNWSWWSWWWWSSSSSEEEENNNEEENEESWSESS","branches":[[4,11,"ENNNEESWSE"],[8,3,"SSSSWNWNENWWNEE"],[24,1,"SSSSSENEEEENENWWWSWW"],[19,13,"NWWNNWWNEENNWSWWNN"],[9,16,"WSSSWSEENENEEESESWS"],[2,27,"NWSWWNWSWNNEEEEE"],[21,23,"NWNWNNWSSSWSSEENN"],[22,24,"SSWSES"]],"walk":562},
+{"title":"Campground Cleanup","rows":36,"cols":30,"hero":"🦝","goal":"🗑️","goalName":"trash can","mission":"Pick up all the trash around the campground, then take it to the trash can.","start":[0,0],"end":[35,29],"open":["6c6a86e86eaac2ac6c2c6aae846aac","553ea9569546baad53c3d683e952ad","13c3ac556957c2e9543c792aba96c5","6c3ac5555695385697a916c686a955","53ea913d57c52a95452c2d3d696c55","3c16aac551556aa97947c3c794553d","43a96c517c5796c43a9538156b9785","7aea913c15796953aaabec6952c3c5","543ac6a969569456aaac153c383c39","5786956c3c152d3bc6c3e96baac3ac","53c7e913c3eba942953abc386c7c69","3c5516aabc546a96c52eabea9393d4","45556d6c453956a953c16c3c2ee83d","7953939553c693c6b8569169293c69","3abaea855693c693aad3ac3ac6c554","6c6856a979683d446aba8568553939","53d2952abc3c6d3d3c6ea93c57aaac","3c56c3ac47a953c3c39546e9792e85","293956a95546b8543c69393e96e969","6aaa97ac79556a93c556aea9453ebc","3aaaa94516953c6a9513c3aad3c545","6ac6ac7d6bc7857c696e946a929555","7853c393bc53c51792956b9682c395","5694546ac53a93e92aa9386d6c7869","556bd554556ec296c6aaaa93d3bc54","1556b955511556a9792aeaa852ad3d","69152a953c45556a96aabc6a96abc5","7aa92c694579393ac3c2c13ac38439","3c2ae956bd16aaec547abaac3c6bc4","43aabc53c3c56a93953c6aabc1543d","3aac695454393ac46d6956c69693c5","6c6d56953bc6c6955552d1552d2e95","5395552d6a9553eb913c3c53c3c569","3c4553c556ad543aaac3c39696953c","69395695538557c6ac3c3ac52bc7a9","3aaab92bbaa939392b83aa93aa93a8"],"items":[{"r":29,"c":25,"e":"🥤","name":"cup"},{"r":17,"c":8,"e":"🍕","name":"pizza slice"},{"r":15,"c":3,"e":"🍬","name":"candy wrapper"},{"r":30,"c":12,"e":"🍟","name":"fries box"},{"r":13,"c":21,"e":"🧦","name":"old sock"},{"r":13,"c":3,"e":"🧃","name":"juice box"},{"r":31,"c":21,"e":"🍌","name":"banana peel"},{"r":3,"c":24,"e":"🥫","name":"can"},{"r":26,"c":28,"e":"🧴","name":"bottle"},{"r":20,"c":11,"e":"🎈","name":"balloon"},{"r":26,"c":10,"e":"🥡","name":"takeout box"},{"r":31,"c":23,"e":"🧻","name":"paper roll"},{"r":11,"c":21,"e":"🛍️","name":"plastic bag"},{"r":25,"c":23,"e":"📰","name":"newspaper"},{"r":12,"c":0,"e":"🔑","name":"key A","key":"A"}],"path":"ESSESEESWWWNWSSESEENEEESSESWWSSWWSSSENESENESSSWWSSEESWWSEESSSENEESSEENWNNNNENNENNENWNEENESSWSEEENNWNNNESEEESESESWSEESSSENEEEESSWSESSSSWSSESSWNWNNWWNWSWNWSWWWWWSWSWWSEESSWNWSWWSEESWSESEEEESESEEENWWNWNWNNENWNEEEEESESWSSESWSSEEENWNENWNNENNEESESSSWSESWWSEE","branches":[[12,5,"NEEEESSESWSWSESSSWNN"],[19,5,"SWWWWWNEEEENNWSWNNNE"],[14,18,"SWWSESENEEENNWWNENES"],[11,22,"EENESENNWWWNWNENNNNE"],[24,24,"SSWWSEESES"],[25,16,"NWSWWSSWNNNWSSSWN"],[28,18,"NWNEEENEEE"],[29,23,"WWWSSSESENNNWS"],[10,3,"NENWWNWWSSSSESSWN"]],"walk":548,"doors":[{"r":23,"c":23,"k":"A"}]},
+{"title":"Farmers Market","rows":36,"cols":32,"hero":"🐻","goal":"🧺","goalName":"basket","mission":"Gather every fruit at the market, then bring it all to the basket.","start":[35,0],"end":[0,31],"open":["2aec6c6c46aaaeaaac6ac6aeac6ac6e8","6c555395392ec7a869569569697c517c","53913c4786c1396a9693c1543c153c15","7ac6e953c53aac54692c5693c3a94569","3c393c7abd2e83b956ad796aba86d57c","6bac297a856bac6c552956baa8695515","16c386d6ab92ab9393aa956ea83c53c5","293aa957c6aa86c446ac6913aec53e95","46ac6a917baaa979554396aa8179452d","3969546a92c6e83c797869686a96d3ad","6ad69552ec393ec7bad692d694697869","3c53ad5693eac153c2d56a956b943c54","69386d552ab8383c3c5556a956a96955","7ac6917ba86ac6abc515552e956c5695","545546d2ea96b96c17a953c3ad539569","3d55791696816a95452abad6c13ac53c","69553aad2be83c2b93aaac553c6a93ad","7853c6c1683c6bc6aac6ad39453eae85","16b8553c7ac794556a91696ad3c56969","696c39455453c53956aa94543a915694","7a93ea915552bbc6956c6957c2c693ad","386c3ee8393c2ad3c5553c395693aaad","6a93c556ac43ac385553ad6a93ac6ac5","3ac4515543d683aed57c2956aaad5695","6c3d3ab93c53c6a93953ac396c695545","53c3ac2ea93c556aac56ad6e95569555","7c3ac3c3aac3d552a955695569554555","53c6b856aab8397aaa95529554395555","56956ad56eaaac16aaa93c6953ae9155","1529543957c2c3a92aaec39452c3ae95","696a97c4553ad6aeac693aad3abac3a9","7c3aa953956c1543c392eec3c6e856ac","556ea83aa955693c3c6c5516b916916d","5393aaeac69556a9695553a96ac56e95","52ec6c3c1545556a969516aa94551545","3a939383ab93b93aab83abaaa93ba939"],"items":[{"r":0,"c":25,"e":"🍒","name":"cherries"},{"r":32,"c":17,"e":"🍋","name":"lemon"},{"r":34,"c":30,"e":"🍊","name":"orange"},{"r":2,"c":23,"e":"🍇","name":"grapes"},{"r":6,"c":25,"e":"🥭","name":"mango"},{"r":9,"c":5,"e":"🍎","name":"apple"},{"r":7,"c":14,"e":"🍍","name":"pineapple"},{"r":32,"c":6,"e":"🍓","name":"strawberry"},{"r":23,"c":10,"e":"🍉","name":"watermelon"},{"r":31,"c":27,"e":"🍐","name":"pear"},{"r":26,"c":15,"e":"🥥","name":"coconut"},{"r":23,"c":8,"e":"🍌","name":"banana"},{"r":19,"c":9,"e":"🥝","name":"kiwi"},{"r":26,"c":24,"e":"🍑","name":"peach"},{"r":27,"c":5,"e":"🔑","name":"key A","key":"A"}],"path":"NNNNESSENESEEESESEENNENNESSSSENNNENNEESESESWSWWSEEENENNESSSEENEEENEESSENNNENNWWWWNNNNENNWSWSSSWSWNWNNENWWSSSWWWWSWWNWWWWSSSSWWWNNWSWWWNEENNEENNWNWWNWNWWNEENESESSEEENNEESESSESESENNNEENESENNNNNEEENENNWWWWNNNNWNWNNWNNWSWWWWWNWNEEENEEESENESENNNENENNEESWSESSENENNENEESWSESEENNWNEESSESSSSESWSSEENNNNNWNENNWNE","branches":[[30,15,"EESENENESEEESESENEE"],[35,27,"EENNENESSSWN"],[25,21,"NWWNWSSSSWWWWNNEEESWW"],[28,6,"SENNEEENWWWNEENWN"],[23,15,"WWNWWNWNNNWWSSSENN"],[10,15,"ENENNEESENENNENEENWN"],[6,9,"NNWWWSSSSWWSSWSEENN"],[7,29,"WNNNWSWSESSWNWWWNEE"],[31,0,"NENNENWNWNNESESEESE"]],"walk":630,"doors":[{"r":24,"c":15,"k":"A"}]},
+{"title":"Deep Space","rows":38,"cols":32,"hero":"🚀","goal":"🌍","goalName":"home planet","mission":"Catch everything floating in deep space, then land on the planet in the middle.","start":[0,0],"end":[19,16],"open":["6ec6aaae86aac6aac6aaaaaaeaaac2ac","1513c2c5696ad7c4556aaaac3aac786d","6d6c3ad5143c153d513ac6c56c6952d5","5153aa97ad6969453c2a953d1396d695","7a96ae85693c56bbc56c69456c6d1569","52ab856d386b97869513bc555553a954","3aaaad556c3a816943ae8555553c4695","46c6a95393c6ac56d6e9695553ad3945","55396a96c4578551551692bb92c56c3d","53c43ac53d53c57a97c3aac686b953a9","56956c396d3a9796c156c69543ac7aac","796953ac5546a9693c7d3947f86916a9","3ad692c555556c5685152ab93a96e96c","6c53aad3d395555569692eaec6ed1415","5392aab856a953f9383ac3c511516969","16aac6c693ac3c3ac6aa96956c3c56bc","696c51556a83c56c3d6ae92b93e95169","56953c53946a951785543ac6ac3c3abc","3943857aad5683a94393e8556943aac5","6abec53ac153aaeabc46ba9552faaa95","3c69156a969686d6c7952ae954546aa9","2956e956c3a92d55512baabc39393c44","685552d53aeaa9153aaaac696aaead3d","3ab93c3be856aac3c6c6a93aba852969","6aac6bac5695685691392eaaa86baa94","7ac556a955295693ac6c47aec696aac5","5691552e93ee956ac553d16955692c79","13c693c3c693c3d45516bc52bd3ea93c","6ad54692956c3a9797ab8514692d6ea9","3c13d3aaa953aaa943ac69693aa95568","696c7a86c43ac2aafa8552d6c6c6957c","569396c5796c3c6c3ae93af939538515","53eac17956952d556c146c16ac56c569","78545416b96d43d393c3956bc57d793c","3a9515692c51783ac43c695695155445","6ac3abd46d7c3ee83d6f945383a97d55","543aac395157853c69516b92c6c2d395","3baa83aaba93ab83b83a92aab93abaa9"],"items":[{"r":2,"c":8,"e":"🔭","name":"telescope"},{"r":28,"c":27,"e":"🌟","name":"bright star"},{"r":6,"c":9,"e":"🌙","name":"moon"},{"r":5,"c":18,"e":"⭐","name":"star"},{"r":28,"c":20,"e":"🌠","name":"shooting star"},{"r":13,"c":30,"e":"🌞","name":"sun"},{"r":1,"c":16,"e":"🛸","name":"saucer"},{"r":36,"c":12,"e":"🛰️","name":"satellite"},{"r":29,"c":12,"e":"👽","name":"alien"},{"r":8,"c":9,"e":"💫","name":"sparkle"},{"r":25,"c":10,"e":"🪐","name":"planet"},{"r":18,"c":18,"e":"☄️","name":"comet"},{"r":17,"c":14,"e":"🌕","name":"full moon"},{"r":33,"c":23,"e":"🌑","name":"dark moon"},{"r":5,"c":1,"e":"🔑","name":"key A","key":"A"},{"r":24,"c":25,"e":"🔑","name":"key B","key":"B"}],"path":"ESSWSSEENNESEEENWWNWNEEEESSSSSSSENESESSSEENWNNEESSSENNNNENENWNNWNWNEEESSSESSSEESWWSSESSESSWSEESWWWSSSENNEESEESSWWWSSEEEESWSEENEEESSWSWSSSWSEEENNWNENEEESSESWWSSSSSWNWSSSWWNNNWWSWSSSWWSWWNNENWNWNWSWNNWSSWNNWNWWNNESEEEENENNWWSSWWNWNWWNNENNEEENNENEE","branches":[[5,7,"WSSSWWSEESENNESEN"],[1,13,"SSWSSWNWNENWNEENWWWSWS"],[11,19,"NESENENWWWNENENNWWNWS"],[16,17,"WNWWNWNNWSSSESSSEENNWS"],[22,27,"EENWNEEENNNWNENWNENNWS"],[33,27,"WNNNWSWNWSWWWNNENNWWSE"],[33,14,"SEESESWSWNWNWSSWWNE"],[27,14,"WNNENNWWWSSW"],[4,0,"SSEEEEENNWWSWW"],[27,25,"WNNWWWNEEEE"]],"walk":705,"doors":[{"r":25,"c":27,"k":"A"},{"r":10,"c":19,"k":"B"}]},
+{"title":"Recycling Plant","rows":38,"cols":34,"hero":"🤖","goal":"♻️","goalName":"recycling bin","mission":"Collect every recyclable in the plant, then load the recycling bin.","start":[0,0],"end":[37,33],"open":["46aeaac2aeac2eaac2eaac6aaaea86aea8","7943ac3aa9696bc45696c53c6c56a943ac","7a96e92ae856945553c515695393ac7a85","16c516ac7c39479516956952bac2c556ad","69796969152ed3c7a96952d6c2d6d7d3c5","52969696a96954552afc3c553c15391691","56a969692c7c393d6c13a953c3c3c46d6c","3d6a92bac393ee8393ac6c7c56f83d5155","693aaaac7aac13aec6a955539516a97a95","3aaac6a93c696aa953c6d13ac3ad6c16ad","6ea857ec295696ac3c553aaa968553a945","53c695556ad54543c553c2c6a9693c2ed5","54396953bc15553c393c3c556c3ac3c555","57869452c3a953c7aaa96b9553ac3c5155","53c3c796beaeb85546c6b8693a83e93c55","383c556943c3c69539396abaec6c3ac539","2ea955547abc55296c6a968457956c156c","696a939792c153c69552c52d5383d3c795","7ad2c42ba87af83f83bad5693c6c385545","5296b96aac1416c16c68157ac553ec5395","7aad6a96a96969569392e9385554539685","16c17a83e83ab857eac696ac55553ac52d","695692c43e86aa9552b969455557ac3969","3c3b843babc3ac6d3c6a96b9395383ea94","43ac696c6852e913c7968546c696ac7ac5","7c6d52d7b83c3eaa916d69795569693c3d","55513c53c6e9696aac513a9453b856e969","553ac538397c52bc6956aaad3c6c513c3c","13ac53aaae9396857a93aac3c393fc6969","6aa93ac447ea856d16aaaab87ac41392b8","7c6ea815393c6917a96c6a8696b96aaaac","5393aead6aa97ac52ad3d6c7c56ab86c69","5686c3853c2ad453aa969551513c469394","39693aeb83ec39546aab853abac53d6ac5","6aba8696a857ac5396c6c56ac693c3943d","52aaab87ea93c57aa955553c53aa96eb85","7c6c6aa954469392e83953a93ac6c556a9","139392aab93baaa83aaabaaaaa91393ba8"],"items":[{"r":35,"c":27,"e":"🥡","name":"paper box"},{"r":15,"c":27,"e":"🧴","name":"plastic bottle"},{"r":7,"c":2,"e":"📒","name":"notebook"},{"r":20,"c":27,"e":"🥫","name":"can"},{"r":2,"c":9,"e":"📚","name":"old books"},{"r":28,"c":25,"e":"📰","name":"newspaper"},{"r":34,"c":20,"e":"🥛","name":"glass"},{"r":11,"c":13,"e":"🍾","name":"glass bottle"},{"r":34,"c":4,"e":"📄","name":"paper"},{"r":16,"c":22,"e":"💡","name":"light bulb"},{"r":25,"c":13,"e":"✉️","name":"envelope"},{"r":36,"c":15,"e":"🔋","name":"battery"},{"r":16,"c":23,"e":"🗞️","name":"rolled paper"},{"r":29,"c":23,"e":"🧃","name":"carton"},{"r":16,"c":7,"e":"📦","name":"cardboard box"},{"r":15,"c":1,"e":"🔑","name":"key A","key":"A"},{"r":0,"c":12,"e":"🔑","name":"key B","key":"B"}],"path":"SENEESEESWWSSWNWSWSSSENEENENENEESWSWSWSWWSEEEEESWWSEESSEESEENNNENEEENESSESSWNWNWWSSSESSWSSESENENESSENNEENEEEEESENESSENESESSSWNWWNWSSSSSSWSSENENEESWSSSWNWSWNWNNNWSWSWWNENNEENNWWSWSWWSWNWNNWSSSESWWWSWSSWNWSWSESESWWWSESEESEESSENEEENESSENNESSSEEEEEENWWNNWWSESWWNNNNNESSEEEESWSEEENWNNWNEENEEEEESWSWNWSWSSENEESESSWWSEE","branches":[[10,6,"SSSSWSSSENNENEESESWWSWN"],[12,8,"NEENNENWWWNWWNENEENNWNE"],[15,24,"SSSESSSSSWNNNNWWNENN"],[28,28,"ESENENWNENWNNWNWWNN"],[21,16,"EESENENENNNNE"],[33,10,"SSWWWSWWWSWNWSWNWNNEEEE"],[37,20,"WWWWNW"],[33,24,"NNWNENNWNWWWWSEEESE"],[7,1,"SWSEEEESSWSWNWNWSSSSSE"],[0,3,"EEESEEENEESWSSENENENW"]],"walk":690,"doors":[{"r":25,"c":26,"k":"A"},{"r":34,"c":24,"k":"B"}]},
+{"title":"Safety Check","rows":40,"cols":34,"hero":"👷","goal":"🏗️","goalName":"job site","mission":"Start in the middle. Collect all the safety gear, then go to the job site.","start":[20,17],"end":[39,33],"open":["46c6aaac6e86aac46ec6c2c6ac6a86aaec","55552c69556bc693957956f943baa96a95","3953c53c539453eaa914393eb86aaa96a9","6ad413c556ad3c3c6ac3aae96a96c6a92c","5693ae953bc3c143943ac45696a9396ea9","556aad696abc3ad2ed6c3d1543aac297ac","5394453a96a96a9695516bc3bac456c385","56c7bd6aa96a92e969569696a855153ac5","3951297ea816ac7c52d3c16d6c3ba92c55","683aaed16aa945157ed4781393ac6aa93d","7aaac53c56aed3a955557c46aac57aaaad","52e83bc555453ac6955395556a95786aad","3e96ac13b9794695693c297956a95696ad","29696d686a92d5693c43aa9453ac13c569","6a96953ab86c3952c53ec6ad52c56c513c","3ac3c56aea93aa96956913c17a97953c69","6a9455783ac6aac5693c6c5696c3856d3c","3c6d513c6c53a85796ad53952d3aa91569","69153ac1513ac693a9453ae943eaaac53c","56abc45456ec53eac6d3c4547c3ac6d569","392c3d53d5513c3855383d7953c695153c","6aab853c793e856c57aae93a9693c3ab85","56c6a96916aba95393c43a86c54692c2a9","79554696c56aaad6c293aaa93953c6baac","3c3953a93956ac5556aec2ec6ed43946a9","43c2fc6c2afb855555693c55553d2ad3c4","3c3c5393ac3869155552c555552bc6bc3d","69693c46a96c3aa9553c3b9153c2b96b85","5696e953ac53ac6c3b856c6a943ac296ad","5529547ac396a953c6e957d2abac3c6d45","53aa93d6d2c3c6d2d516913aaaabc39539","7aaeac153c7c513c13a96e86c6aa92abc4","3c692d692b913c456c6a956953c6c6aa95","6952c3d6aac6a9539394693c3a915382ed","5696b853c4396ebc2ec53e856c6c7aaa95","13c7c69453e853c3a93bc3ab939396ae85","6a9553a93c7c5456c68696eaa86e8543a9","56c17c6e8515555553abc53ac695697aac","7d3a9153c3c795393c6c13c695453a9469","13aaaab83a93abaa8393aa93ab93aaabb8"],"items":[{"r":8,"c":29,"e":"🩹","name":"bandage"},{"r":9,"c":19,"e":"📻","name":"radio"},{"r":31,"c":13,"e":"🪜","name":"ladder"},{"r":3,"c":4,"e":"😷","name":"dust mask"},{"r":1,"c":23,"e":"🔔","name":"alarm bell"},{"r":33,"c":23,"e":"📋","name":"checklist"},{"r":19,"c":28,"e":"🥾","name":"work boots"},{"r":5,"c":11,"e":"🥽","name":"safety glasses"},{"r":26,"c":25,"e":"⛑️","name":"hard hat"},{"r":6,"c":16,"e":"🧤","name":"gloves"},{"r":18,"c":7,"e":"🦺","name":"safety vest"},{"r":16,"c":28,"e":"🔦","name":"flashlight"},{"r":28,"c":29,"e":"🧯","name":"extinguisher"},{"r":7,"c":28,"e":"🎧","name":"ear muffs"},{"r":22,"c":31,"e":"🚧","name":"barrier"},{"r":12,"c":12,"e":"🔑","name":"key A","key":"A"},{"r":11,"c":1,"e":"🔑","name":"key B","key":"B"}],"path":"SEEEENWNWNNWWSWWNENENNNWNENNNWNNENNWSWSWSESSWWNNWWSWWWSSSWNNWNNNEEENEENWNWWNNNNESSENENEEESWSEEEENNESENESSENEENEESEEEENEEESWWSWWWWSWWSWSSEEESSEEENNESEESSESSWWWSWSESSESSSSSSWWNNENWWWWSEESWSESWSESENEEEESWWSESESSWWSWSWNWNWWNWNNNWSSSSWWSSEEEEEESWWWSESWWNNWSWSESSENESENESENEEEENESSSWWNWWSSWSEENEEESWSE","branches":[[9,16,"SSWSSWSSWWWNWSWWWWSSES"],[5,10,"WWSWWNENNNWNENWWWWSSES"],[2,14,"SESENEESEESESWSWSESSSWNN"],[0,32,"ESSWWSWWSWNWSWWSEEESS"],[11,33,"SSWSESWSESWSESWSESSWW"],[18,26,"WNNESEEENNNWSWSE"],[24,25,"ESESESENEESWSW"],[35,23,"WWNWNENNWSWWSWNWSWNNWNWS"],[12,8,"ENNEEESEESWSSWNN"],[9,6,"WSSWNWWWWSSEENW"]],"walk":685,"doors":[{"r":4,"c":24,"k":"A"},{"r":30,"c":26,"k":"B"}]},
+{"title":"Harbor Cleanup","rows":40,"cols":36,"hero":"🦭","goal":"🗑️","goalName":"trash can","mission":"Clean up the whole harbor. Pick up all the trash, then take it to the trash can.","start":[39,0],"end":[0,35],"open":["6c6a86ec2aeaaec2eac6aae86ec2eac6c6ac","53d6a913ac3a85569693e8569556943d57c1","5693eaaac56ac539692ad69569396f85513c","53ac3e869394796c52ec13a93eac15293aad","3c4569692ec796913c552ac6c16d696aaaa9","43d3943ac13bad6ac3952c5556957a96aaac","7c3ec782d6ac693c56a96939554156c56ac5","57c157ac39453869396ad42e957c5539543d","553c552baed3ac3ac45693c56953916a97a9","554393aac516c52ad397ac57bc56aa92c3c4","53baaac4556d17ac16a94793c53946ac7855","3aac6a9553d38169696afd6a956c3b857ab9","686952c79696ac7ab812953c6b93a86956a8","7a96969543ab853a86aac3e956aaaebc152c","56a92d693ec6a96aa946b83c53c2c3c56bad","53c2c53ac557aa92c6bd6aa954169693d6c5","543a93e85553c6ac7929546a93eba96c3915","552aac3c517c1783baac5556a856a8556ac5","53ac43c39693c3c46c6b95396c13c693d2b9","3aa95692ebac3c55553ac3ee956a93c296ac","6aaed3ac3869295793ac7c552b92ac3aa945","16a93ac3ec3c6c5786c79393aac6c56e86d5","692aac5693a9139169556c6ee87939516939","3c6ac53beaac6aac387955513a92ec3c3c6c","45569786d6c178456c16953ac6e817c52f95","55552d69155696d553ef856a953ac513ab85","7913c796ad3945539693c57ac3c47d2c46c5","56c6d3a9292ad53e8546953c3a9793c53d3d","393916eac2ec5543c7952b83ac43a813c52d","6c6aad783a9793d4796d6aaac7d6aac697c5","1554693c2aa96c393c513e8691556c3d6955","6d579683aaaa956aa93ac1696c5393c39451","55552d2aaeaaad7ae86c545695786c546d3c","5153abaa83ea853c169395792d3a93d55169","7abaaaac6a92c3c5692ee93c6d6eac3d56bc","3c2e84453c6c3c553aa93e85539383c55785","47a969396b952d552c6ac3ad3e86ec515169","53c6d6ac3a854553c53c1683c3a9513c7e94","78551543ac6953d6bfc5696816ea96c1556d","3a93a93aabbab83929393abaa93aa93a9391"],"items":[{"r":3,"c":27,"e":"📰","name":"newspaper"},{"r":38,"c":6,"e":"🍌","name":"banana peel"},{"r":27,"c":8,"e":"🥡","name":"takeout box"},{"r":20,"c":20,"e":"🍟","name":"fries box"},{"r":21,"c":32,"e":"🍬","name":"candy wrapper"},{"r":30,"c":22,"e":"🧦","name":"old sock"},{"r":38,"c":31,"e":"🥫","name":"can"},{"r":2,"c":18,"e":"🎈","name":"balloon"},{"r":36,"c":34,"e":"🍕","name":"pizza slice"},{"r":33,"c":13,"e":"🧻","name":"paper roll"},{"r":11,"c":13,"e":"🛍️","name":"plastic bag"},{"r":29,"c":19,"e":"🥄","name":"spoon"},{"r":32,"c":26,"e":"🧃","name":"juice box"},{"r":32,"c":25,"e":"🧴","name":"bottle"},{"r":23,"c":27,"e":"🥤","name":"cup"},{"r":29,"c":15,"e":"🔑","name":"key A","key":"A"},{"r":27,"c":10,"e":"🔑","name":"key B","key":"B"},{"r":22,"c":12,"e":"🔑","name":"key C","key":"C"}],"path":"EENNWNNWNEENNNNNEEENESSESEEEEENESSSSESSSSSENENWNNNNWNNEEENWNENNNENESESWSSWSSEESSWNWSWSWSEEENESESEENNWNENENESSSWSSESEENESSWWSEEENESEENNEENENNWNENWNNNWSWSWNWNWWWSSENESESSWNWSWWNNNNWNWWNWNNEENWWNNEESEENNWWWNNWSSWNWNWWNEENNNEEENWNENWNEENWNENENNNENENWWWNENNESSENENEESENESSSEEENWNWNEE","branches":[[32,13,"WWWWSESWWSESENESSSWSWWWWN"],[25,18,"WNWSSWNNNWWWSSWSWNNWSSSW"],[33,22,"NNENENWWWWSEE"],[34,25,"SENEEESESSES"],[29,33,"NNNESENNNNWSWSWWNNWNNEE"],[26,22,"EESEENWNNESEESENNNWW"],[13,22,"WNNNNWWSWWSWSWWNENWWS"],[0,25,"WSWSSWWNENNWWWSESWW"],[29,16,"NWNWNNWSSSSESEN"],[28,6,"EESEENESENNWW"],[18,19,"NWWWWNWWSSESSSSWNWS"]],"walk":820,"doors":[{"r":39,"c":28,"k":"A"},{"r":15,"c":23,"k":"B"},{"r":28,"c":33,"k":"C"}]},
+{"title":"Harvest Festival","rows":42,"cols":36,"hero":"🐰","goal":"🧺","goalName":"basket","mission":"Harvest every vegetable, then bring them to the basket in the middle.","start":[0,0],"end":[21,18],"open":["6aaaea86aeeaac2ec46ac6ac6c6ae86c6aac","546c7c6b8556c3e9393c39455394569556c5","53939396a9553c16ac2baad556ad39451555","3aaac4694693c56943e86a95556baa93c539","6ac6b93c396a93bab8569685793c6c6a97ac","52956ac3ec3c6c6aac53c3c53a8553bc4569","3c69143c15691556c3bc5697aac53ac53d3c","693ac7c3c3baa93956a953c3e83d6c53c385","7aaab9383c6c6c6ed3ac543c16a955543c6d","3c6aa86c2f95551556c153c5696e95554551","29546ad7c16953a91556ba939453c155393c","6c57b8553c3c3aaaa93946c2abd43c57e86d","53916a93c3a92eaaaaac5556ac3969517c51","3aac7c2e96aac3c46aab9553c56e947c553c","42ad53c3a96c569792e86d3a93956d53956d","56a97856ea913943c6d6916ac2c5153ac395","792c56d17c6aaaba95556a943c3ba96c3c69","52e915381552aeaaa9553c6bc3c6ac57a954","7a94696aa956c546c6978552d453c393a855","546d52d6ac5539393bc3c57c3d787ac6aa95","53953c3b83b96aaec43c5513c13e9693ac6d","7aad2d6ac6aa96c1156953c696a9696aa955","56c54396b96ac13c2f943a97c3c2bc5682d5","5513bac3ac3c5683c56d6c453abc69796a91","556ac452c569556c53d1557946a93c56d6ac","5792f93a9556b9539296953a93ac69391545","3946d6ac6d516a96aac3c3aaaaa93a86a955","6ed51785539696ad6c5696ac686aeac3c695","5513ad693ac547855139694556b8569697e9","13ac417aaa9579693aaed6d53d6c57a9693c","6ac53c3c2ea93852eaa91553c153954696a9","52b96babc3c6ac3c56aaa952ba92eb93c56c","7ac6946af83bc3c5556c2c52c6ac386a9555","3c39693c16c694555397a93e95456a96c155","6baad6abc5556d793ae96ac56bd392a93ad5","56ac13e879555556ac7878397c3ac6c6ac15","53c3aa94383b9513c51696c457a8395543c5","7852c6c3eaac2fc693c3c555516c2c393c39","1696bd783ac3a97942ba953b9693c3aec7c4","6d45293ac696c2bc3c2ec56ea96856a93955","51396aac392d3c43c5691513c696956c6c55","3aaa92abaaa92b92b93aabaa93aba91393b9"],"items":[{"r":5,"c":18,"e":"🍄","name":"mushroom"},{"r":8,"c":21,"e":"🍠","name":"sweet potato"},{"r":22,"c":13,"e":"🫑","name":"bell pepper"},{"r":38,"c":7,"e":"🌽","name":"corn"},{"r":2,"c":21,"e":"🍆","name":"eggplant"},{"r":12,"c":13,"e":"🥦","name":"broccoli"},{"r":25,"c":9,"e":"🥒","name":"cucumber"},{"r":6,"c":4,"e":"🥬","name":"lettuce"},{"r":33,"c":15,"e":"🧄","name":"garlic"},{"r":18,"c":25,"e":"🥑","name":"avocado"},{"r":15,"c":11,"e":"🧅","name":"onion"},{"r":9,"c":35,"e":"🥜","name":"peanuts"},{"r":4,"c":22,"e":"🥔","name":"potato"},{"r":1,"c":26,"e":"🍅","name":"tomato"},{"r":21,"c":26,"e":"🌶️","name":"pepper"},{"r":9,"c":19,"e":"🥕","name":"carrot"},{"r":0,"c":17,"e":"🔑","name":"key A","key":"A"},{"r":9,"c":32,"e":"🔑","name":"key B","key":"B"},{"r":40,"c":1,"e":"🔑","name":"key C","key":"C"}],"path":"EEEESESENENEESSWWSWSESEESSENENWNEENWNNESESSENENEESESSSWNWWWSSENESSWSSWWNNWSSSEEEEENNESSENENNNNNWNENEENWWWNWNEESENEESSSSSSEEESENNNWNENWWSSWNNNNESENEESSENENESSSESWWSWNWSSEESSSSSSSSSEESESWWNWSSWNWWSESSWSWWSESESWWSEESWWWWWWNNNWSSWSESWSWNNWWWSSSWSSESSSWNNWNWWSESWSSSWNNNWSSWNWNWNEENWNWNEEEENWWNNENNNWWNENWWSWNNWNNENNENNWNWNEENNNESSSESWSEENEEESSENENWNEEEEEESWWWSWSESWWWWWWSSSSENNESENNEEEENNESSSWSESESW","branches":[[6,18,"ESWWSEES"],[10,20,"EENWN"],[7,27,"SWWSWSWNNWNWNENWNE"],[13,30,"ESENNESSSENENWNNENWNNES"],[23,26,"WWNWNENWNWNNEESSEN"],[32,11,"WNWNEENNNENEENNESENNWNWNWS"],[36,11,"ENNESSSSWWNWWWSEESWSWNWWNE"],[10,7,"ESESEENWNENNWSWNWNWNWNWWS"],[20,10,"WNWWSWNNEEENNWNEENES"],[0,9,"EEEESEENESEN"],[5,30,"ESSESESSWN"],[34,7,"WWSESWWWNWWSESSWSS"]],"walk":1001,"doors":[{"r":14,"c":30,"k":"A"},{"r":13,"c":4,"k":"B"},{"r":13,"c":31,"k":"C"}]},
+{"title":"Paper Trail","rows":42,"cols":38,"hero":"🧒","goal":"♻️","goalName":"recycling bin","mission":"Follow the trail of recyclables, collect every one, then find the recycling bin.","start":[0,0],"end":[41,37],"open":["6aac2aeac46c6ac6c2aaee86aac6aaeaaeaaac","16ad6a945553b8393c6c13abc693ac3ac16c2d","69693ac79556c6aaa957aaac156aa9469693c5","3c546c53ad5553c6ea93c683c556c2d3abac51","69555392a939547d3ec43d6a93b956d6ac693c","52d53aaaaae83d552d57c552c46855552d56c5","3c3bac2c6c3ec513c515397ab97ab913c55555","43ec2d6953a953c69543c2bc6c3c6aac555155","7c13c53c3c2ad453c53abc29552956ab953a95","53ac57a943ac3d54556c2bc693aa93ac456ac5","7ac7916a92c3c1555553ac3ba86c6ac5557c39","56916c3c6abc7c3d13d2c3846a9578395553ac","53aa9543bc4553c7c6babc6d168556aeb97a85","3c2c6952a955545553a86913ad695543ac16a9","296d3c7aaa93d55156aa92eac53a9556c3c3ac","2ad5697ac6c2bd3a952eec5457aa83d53c3aad","6a953c38553c2bc6c3c55397b92c6e93c3ac69","52c543ac5543c695569552a96ac793ac3ac53c","5693d683d53c15693d693aaa96956ac56853a9","57c697e83bc7a93ac13ac6c6a9693c53d6946c","5539293eac516e8696e83953aad6ad3853c795","53aaaea9295693ab853ae852c6952d6ab8516d","52aac16aac392ac6a96c3a943d6bc13c469695","56a83c56c7aaaad3aad3c46bc53c3ac3d3a945","792ec3b9156e86946a96939693c3ac3c3aac55","56ed3aaaa953aba93c692ec54696c3c7ac6955","51516ac2aebaa86ae93ac53953ad52956912bd","7c3e96d6c786ac56f86c392abac53ac516c6a9","53c38515516943953c53c6ac6ad56c3d693bac","3c56c7a93a947ea92b94554396d153a9546ac5","293953c46c6b956c6c69397ac5543ac45556d1","6eaad6979392c553957ac6943953ec3d39513c","516c13c3ac6c5396a956952d6c3c17a92c3c69","3a93ac3ac5553aa96a93c3c51783c3aaabc53c","6aec6d2c53d16ee83c6c3a9543e856aa869569","3c5553a956969516a953c6e9783c53c6ab8554","45513ac69543c3a96c54791696a97c3b86a955","553aec5543bc52ae939794696bac53c6c56c55","7b869139786956c7c2c3ad3c7a85543955557d","16a96aea969455517c786d4556a957c4395515","696c543c696d553c157a955553e8553ba853c5","3a9393abba91392ba9382b93b83a93aaaab839"],"items":[{"r":12,"c":10,"e":"🥫","name":"can"},{"r":37,"c":29,"e":"🧴","name":"plastic bottle"},{"r":27,"c":32,"e":"🗞️","name":"rolled paper"},{"r":12,"c":2,"e":"🥛","name":"glass"},{"r":6,"c":20,"e":"🥡","name":"paper box"},{"r":16,"c":16,"e":"💡","name":"light bulb"},{"r":4,"c":32,"e":"📒","name":"notebook"},{"r":14,"c":0,"e":"✉️","name":"envelope"},{"r":25,"c":17,"e":"📰","name":"newspaper"},{"r":12,"c":24,"e":"📦","name":"cardboard box"},{"r":31,"c":11,"e":"📄","name":"paper"},{"r":1,"c":13,"e":"📚","name":"old books"},{"r":18,"c":21,"e":"🧃","name":"carton"},{"r":5,"c":23,"e":"🧾","name":"receipt"},{"r":23,"c":21,"e":"🍾","name":"glass bottle"},{"r":33,"c":24,"e":"🔋","name":"battery"},{"r":6,"c":6,"e":"🔑","name":"key A","key":"A"},{"r":11,"c":22,"e":"🔑","name":"key B","key":"B"},{"r":29,"c":19,"e":"🔑","name":"key C","key":"C"}],"path":"EEESWWSWSESWSSESEESESSWNWWNWSSEESWSEEENESSWSESWSESEESESEESSSENENESEENENWWNENNESSENENWNNEEENENWWWNWNNNNNNNWNEENNESSESESSWNWSSESESESENENNESSEEENNEEESENNWNNEESSSSSSSSWWWWSSSESWWSWSSWSWWWNEENENWWSWWWWNNNWSSSWSEESENESSSWWNWWNWSSWWSEEESWWSESWSSESENNESESSENNEESENEESSSSESESSSESESENESSENNNEENNNNWNNNEESSESWSESWSSSSESSS","branches":[[10,0,"SSSESW"],[18,8,"NNNWWNEEEENN"],[3,16,"WSWNWNEEEENWNWSWNWWSE"],[2,19,"EEEESESWWSSEENW"],[8,31,"WWSEESSWNWWSSSSWWNENNNWSWWS"],[20,26,"SWSSSESWSEENESSEESENNNEESWS"],[23,18,"NESESWSWSEESENNESENNENWWSWN"],[27,16,"WSSWWSSSENNESENESSWWSWWWNNW"],[36,28,"SSSSSWWNWNEENNWWNEENWNWNNWS"],[1,3,"SWSSSSEEESSSEENWNENW"],[11,18,"NNESEESE"],[29,26,"WSSWNWWSWSSESWWNWNENWWNEN"]],"walk":952,"doors":[{"r":9,"c":27,"k":"A"},{"r":30,"c":21,"k":"B"},{"r":21,"c":26,"k":"C"}]},
+{"title":"Workshop Scramble","rows":44,"cols":38,"hero":"👷","goal":"🧰","goalName":"toolbox","mission":"Start in the middle of the workshop. Collect every tool, then fill the toolbox.","start":[22,19],"end":[43,37],"open":["6e86aaaae86aaac6ac6aaaac6c6ae86aac2ec4","53abaa86d696aa954552aeab95569296c3c53d","3eaaaa85556942ad553c412ac553a8693e9529","43eac6c55552bae97fad3eaa9396ac3ac5456c","7c5691551556ac3853c3a96aaea943c693d555","53956ad3a95543c69696c2f8696c3ab92ad395","16c3943c6a957ad3c3c53816ba93aac6ac3c69","457a87a978293c56d43946c5686aaa9783c17c","7952c56e96e86d553bc439555696c6a96c3a95","3c783913a97a9553ac3f86f97969396853e869","6956c6aaac56c53c43c569529692e87c52ba94","5439396ac3b913c53c515452ebc456953ac2ed","3f86c456baaaaa93ad7a953a9479556ba83c55","45697957c6ac6aee8396abac697a953aaae951","553c56951385569384696aa93abac56c6856bc","7b8555696ae9556aa93c3aaaac6c53d57c516d","3c693938543c5396ae856eaac513b855153851","693aaaea93c53c6943a9156a97c6ac556ba87c","56aa8692ead3e93c7aaaa9786955439556aa95","53eaa96a945692c556aaac1694397aa9512ec5","3852ea96ab93ac55396a85692fac12aebac155","687c54696a86a953aa96ad56c383eac56c3c55","5693953c7ac3c452ac6969513ac6969553c395","796e87a9145693bac5783abac693c3a93c56a9","3c55692aed53c6aa9396aaac396a96aaa953ac","2953baaa913c552aeac546a92e96c56c2abaad","6a96ea86aac557c43c3d3d6ea9693953aaac45","52a97aa92c39555569294393ac7aac52aec539","3aaa9686af86d53956aa92eac53a83b86953ac","2e86e96d296917aab946ea92d3aac2ead2bc45","69293e916ad2e946ac393aac786c3c383c6b95","7aec43ac143a96b9696aaaa95697856ac556ad","56957eababa8696e92bac2aa93c3a9545513c5","152913aaaaac56916c6c3eac6a96aa93b96c55","6d6c6aaaeac553aa9393c38796abac6aaa9395","5153ba843c393ac6ec6e96c5696aad7c6eaa85","56b86eabc56c6855555169551696a955156ac5","7946d16c1393be95513a943969692a93c55439","3c5516956aaaa92956e86d2e9696aac6953d6c","6953c787baaac6c6953a9569452bc6956bc515","52bc39692ec45553aba8693c796a93a9543969","3aad46d6a953953c6ac696a95696c2ac57ac3c","6e83d5396c3aa94394392d6c55693aa953c56d","13aa93aa93aaaabaabaaa913b93aaaaaba9391"],"items":[{"r":12,"c":15,"e":"🪣","name":"bucket"},{"r":20,"c":29,"e":"⚙️","name":"gear"},{"r":7,"c":0,"e":"🔨","name":"hammer"},{"r":31,"c":9,"e":"🔌","name":"plug"},{"r":8,"c":32,"e":"🪓","name":"axe"},{"r":25,"c":22,"e":"🪚","name":"saw"},{"r":2,"c":12,"e":"🔦","name":"flashlight"},{"r":28,"c":28,"e":"🪜","name":"ladder"},{"r":2,"c":36,"e":"🔩","name":"bolt"},{"r":30,"c":25,"e":"🧲","name":"magnet"},{"r":34,"c":16,"e":"🪛","name":"screwdriver"},{"r":29,"c":33,"e":"📏","name":"ruler"},{"r":40,"c":31,"e":"📐","name":"square"},{"r":43,"c":16,"e":"⛏️","name":"pick"},{"r":19,"c":9,"e":"💡","name":"light bulb"},{"r":19,"c":12,"e":"🔧","name":"wrench"},{"r":16,"c":18,"e":"🔑","name":"key A","key":"A"},{"r":7,"c":25,"e":"🔑","name":"key B","key":"B"},{"r":14,"c":17,"e":"🔑","name":"key C","key":"C"}],"path":"NEESWSEENNNENENENESSENNEESENNNWNNNNENESSWSEEEEENWNWWNNNESESEENENNWSWWNWNWWSSWWSWNWSWSWSWSWWNNNWSWSSWWSWNWWNNWNNNNWWSESSSSESWWWWWWNWWSSSWSSWNNNNWSWSESSWSEEEEEENNEESESSESWSEESWWSESWSESSSSWSWSSEENENEEENNENWNEESENNEEEESWWSSENESEESSEEESESSWWNNWSWSESWWSWSSSWNNWSWSWWNNEENWNWSWNWSWWWNENEENENWWSWWSWSSSEESSWSWWWWWSWSWSWSSEEENESEEEEEEEEEEEENNEENWNENENENENEEESWWSWSWSSWSSSENNENEENWNEEESWSEENNENWNNWNEEEENESENNWNEESSSSSSWNWWSSESSWNWWSSSSEENWNEESSENES","branches":[[7,36,"NENNNWSSWNNNNNESESW"],[12,18,"NNWNWWNNENWNENNENNNWWSSSWWWN"],[8,13,"WSWWSSWNWWWWSWNWSWNNNNNWSSWN"],[17,6,"SWSWWWSSESENNEENEENEESSWN"],[26,23,"EENENEENWNENEESWSEENNNWW"],[34,23,"NWWWNWWNEEEEENWWWNEENEESSE"],[37,13,"WWNWSWNNWNEESENNWWWWWWNEEEEN"],[35,29,"NWWNEEENNEESSENNNWNNENESSW"],[31,37,"NNNWWNNWWWWNWSSSWNWWWSEE"],[17,25,"NNWWWWWNEEENWWWWSWSESSWWNE"],[9,22,"ENNNEEENESEEESWWWWSWSWNNE"],[18,12,"ENWNNNNEESWSSENEEEN"]],"walk":1237,"doors":[{"r":29,"c":16,"k":"A"},{"r":36,"c":27,"k":"B"},{"r":6,"c":36,"k":"C"}]},
+{"title":"Pirate Cove","rows":44,"cols":40,"hero":"⛵","goal":"🏝️","goalName":"island","mission":"Sail through the cove, collect all the treasure, then land on the island.","start":[43,0],"end":[0,39],"open":["6aaac6ea86ac6aac6ac6c6aaac42aec2aec6c6ac","52e83d3aab83d6c3bc393bc6c13ac53ac5553969","5696c3eaaa869552c542e83956aa93ac39396854","17a97856ac69693c557c3aae952aaee96c6c5695","43e83a9143d6d6c55553c2c52d6ac13ad3d553ad","7a96c6a83a91555393bc1479439692ec78553ac5","3aa955686c2c55542ac52d3a946baa9516956c55","6ee8557c53ad3d53ec57afaac53c46c3a9439555","155693979683a956d579438457c3915686d6a979","6d13eac52bac6c5553bad6a9513ae853c5152c3c","53ac56956ac395393c6c796c3ac696969543abc1","786d55439456a96e83951693e857c52d6b92ec3c","5695153eed796a916e87c546969153c556aa97a9","5547c7c51392f86a93a953d3abea969553aac3ac","57915153aaaa943c686a943aac16a9693ac696a9","53c43c7c2c2aabc57a96c3c6c3c52ad6aab96d6c","7c57c393ad46ac553c453ab97c396a93ac429395","55393aaac3954393c3d52c6ad7c456aaa956aaad","53a86ac2d6c7d6ac5293c5545539556ae83946ad","56aaf87c395153c53aaa9557d3aa955696aed569","396c56956a9694516aaea9553aaac553c3c51554","6a9153c116c7c5569683aa952c6c39543c53c53d","7aac3c3c6d3955396baaee83e9578693ab969385","3ac3ad4513c693ac3aa8556a9695696aac43eaa9","4692c553ac53aaa96ac69156c7c152d4697a96a8","53ac397ac57ac46ad4556a95393c3c793c56abac","7ac3c43c39385396979396a96aad6956a9556aad","3c3ad3c7aee83ea92fc2c56c568554552ad15469","69683c79293aad6aa954795797a95793ac569554","52faad56aac6a93c6a951693c3ac53a869392bb9","38168153c453ac453c696d6c52ad56aa92ec6aac","6c696c54797ac3d3c396955156c1396aae939469","539695553c529694546bc554393c2a96c3c68794","56a96955693c6947939693956ae96aa97c53e96d","3d6c3a957c43d6b96ee92aed5696946a957c3a95","2917c6e9553a93c29556aad1552d2d3c691546e9","6ae9391697aaa83ac515469693c3c5693aa9553c","547aeaab856c6aac3ba97943c456953aac46b941","7d543aac69553c4546aa947c53b9692ac5796abc","153946c53a93a953d3aac7953ac456ac5152ba85","6bc4553d6aac6c7c56c4516d6abd79457c3c6ac5","543953c396ab93d1513d3a9516c13c5557839695","57c6d696816aac5296c546a9693a855553aac3c5","393913abaa92a93aa939392abaaaab93baa83ab9"],"items":[{"r":24,"c":0,"e":"🐚","name":"shell"},{"r":7,"c":37,"e":"🏺","name":"vase"},{"r":1,"c":11,"e":"🔱","name":"trident"},{"r":23,"c":19,"e":"📜","name":"map"},{"r":21,"c":8,"e":"🪙","name":"coin"},{"r":10,"c":5,"e":"👑","name":"crown"},{"r":23,"c":34,"e":"📿","name":"beads"},{"r":6,"c":7,"e":"💎","name":"gem"},{"r":42,"c":15,"e":"🔮","name":"crystal ball"},{"r":34,"c":11,"e":"🗡️","name":"sword"},{"r":4,"c":24,"e":"🧭","name":"compass"},{"r":3,"c":0,"e":"💍","name":"ring"},{"r":17,"c":30,"e":"🏆","name":"trophy"},{"r":19,"c":3,"e":"💰","name":"money bag"},{"r":14,"c":15,"e":"⚓","name":"anchor"},{"r":33,"c":14,"e":"🔑","name":"key A","key":"A"},{"r":43,"c":11,"e":"🔑","name":"key B","key":"B"},{"r":35,"c":0,"e":"🔑","name":"key C","key":"C"},{"r":5,"c":24,"e":"🔑","name":"key D","key":"D"}],"path":"NNNENNWNNEESEEEEENENNNENWNNWNEEESSSSESENENENWNWWNEENWWWNWWWNWNEESENNWWNNWNWNENNWWSWWWSWNNNNNNNNNNNESEESSSESSESENNNWNNNENWWWNENNNWSWWWNEENWNEENESSEENNWNNESEEENEESENEEESEESSSSEESSSWSWNNWSSSESENESSSWWNWSWWSESSSESSEEEENWNNNESEEENESSSSSEEEESENNNNEEEENWWNEEEENENWWWNEEENESEENWNWWWNNEENNWSWNNNNWSWNWSWWNENWWNNESEESENNESSENNESENEE","branches":[[34,8,"ESSSSWSEENNESSEENWNEEESSESSSW"],[19,4,"SSSESWWNWWWSEESWSEESESWWNWWNN"],[11,3,"WSWSSSESSENESEEEESSENESSWWS"],[1,5,"WNWWWWSSS"],[8,16,"WSSWNNNNNNWSSSSWWNWWNWSSWNWNE"],[19,24,"WSSSESWWSSWWSWNNENNWWWWSEEE"],[12,37,"SEESWWSSENESSSSWSSESSWWWSWWN"],[4,34,"SSWSWWNNWSWWWNENWWSWNW"],[28,13,"NEENENNEESSWSSWWWSESSESSWSWN"],[37,4,"SEEESSWNWSSESWSEEEEENEEESWW"],[27,7,"SWSSSSSSWWNENNWSWSWWSSW"],[1,16,"NEESENESEESENESSWSSWSEEN"]],"walk":1098,"doors":[{"r":14,"c":6,"k":"A"},{"r":12,"c":19,"k":"B"},{"r":9,"c":35,"k":"C"},{"r":20,"c":4,"k":"D"}]},
+{"title":"Mountain Trail Cleanup","rows":46,"cols":40,"hero":"🐐","goal":"🗑️","goalName":"trash can","mission":"Clear the trash off the mountain trail, then reach the trash can in the middle.","start":[0,0],"end":[23,20],"open":["6eaa86aaaeac6c2aeaaae86aac6aaeac2c6aac6c","53aac546a94393ac7c2c5696a952c3c3c556c555","56ac3b956c7aaac553c793c3ac3eb87c39515395","3943c6a913bc2c3938554696e9296c5546bc786d","6aba956ac6c3abac6a93d54516aa93953d439695","56aac554553c6ac396ac13d5692aec43c53ec545","516a93bd3b83b856c3c56a9556aa93bc53c1553d","3a92ae8542aaac393e9796a953ac6aa952bad3c1","6eaac5697aaac3aac54543aad6a97aa83ac2b83c","516c7952bac296e855553c6c556c56aac43ac2c5","7a955696aad6a93ad3d3c5555553956c53e8543d","16c513a946952ec452bc3d553956a9553e969785","6957c6aab96969793c4541552a97ac5169692d69","7855556c6a969296c5557853aac16956b856a954","3c5155153ac3c6a9393d3c546c7a96b96ad7c695","693a956bc6ba93c46ac3c5579396c16e92d5392d","56aaa952952ee85794543d556ae93c516c552ea9","53c6ac3ac3ad1693c555695152d6c53a9553c56c","7a95456ad6a9696c3955543c3c1553ae853853d5","3ac53b929786969386979787c5697a85696c3a95","46b96ac6a92bc7c6c3c3a969539456a97a93aea9","556c3c3bc2ac5539783eac52baad556c56ac6bac","395383c43aad516a96c3c53aaac5555539693ac1","6a96aad3aac53c7c2d3c152ec6915393ac7c6c3c","3aa96c16ac554397c7c3c3c5156e96ee839517c5","46c693c5453b96c139543abd4513c1516ac3c555","55552c553baaa93aac53aaad57c6ba96943c3915","79556d53c6ac2aeac57ac6c1553b82c569696c6d","5455553a93c7ac569556d53a93c46c397c3c5555","3953d3c6aa914393851553ac2eb9552a97c39551","6ab83c3d2c6c3aaaa9693a83c56a93aaad16a93c","3c2ec3c383956aaaae96ac6c5556aac469696c69","6bc51696aae93aaac7c785539153c453d696953c","7c13c3a946bc6aaad5516d3aac7c553c55696969","5542d6c2fb85386c153a93aa85513bc515569454","1556f93c5683c693c3c6c6aae93c6a93c3952d3d","6b9516a91568552abc55396a946956c43e856bc5","56a9696ac7bc57ac2b956abac53c55396bc53c55","53c45696916bb9456ea916ac53c393ea96bb853d","7c79556baa96c6b9512ee9453abaec3ac16c6969","1514553c6869116afac552d3aaac17aa96939694","6bab93c152d6ac3c54513c3aaac3c16ac3ec4569","3ae86e96bc3bc3c553bc43aaead43a943c55553c","2c3c55696d6c38793ac53aaad43bc6aba9153bad","696913929397ac386ad56aaa9786952c6ea96845","3abaaaaaaaa92baa929392aaabab83ab93aa92b9"],"items":[{"r":26,"c":4,"e":"🧴","name":"bottle"},{"r":34,"c":2,"e":"🍬","name":"candy wrapper"},{"r":42,"c":29,"e":"🥡","name":"takeout box"},{"r":8,"c":31,"e":"📰","name":"newspaper"},{"r":35,"c":14,"e":"🥫","name":"can"},{"r":6,"c":15,"e":"🧻","name":"paper roll"},{"r":38,"c":39,"e":"🧦","name":"old sock"},{"r":0,"c":32,"e":"🍕","name":"pizza slice"},{"r":8,"c":21,"e":"🍟","name":"fries box"},{"r":17,"c":31,"e":"🥤","name":"cup"},{"r":9,"c":37,"e":"🛍️","name":"plastic bag"},{"r":41,"c":29,"e":"🧃","name":"juice box"},{"r":45,"c":16,"e":"🍌","name":"banana peel"},{"r":9,"c":11,"e":"🥄","name":"spoon"},{"r":44,"c":37,"e":"🎈","name":"balloon"},{"r":3,"c":12,"e":"🔑","name":"key A","key":"A"},{"r":18,"c":21,"e":"🔑","name":"key B","key":"B"},{"r":18,"c":32,"e":"🔑","name":"key C","key":"C"},{"r":16,"c":17,"e":"🔑","name":"key D","key":"D"}],"path":"ESEEESENNEEEESWWSSWWSSSENNEESSENNESESENEESSENESEENWNEESSENEENWNNENWNENEEESWWSEESWWSSSSWWSEEENNNENEEENESENNESSSESSSEESEESSWSWSSWWSWWSSEENESSSWSEENESEESWSEESESSSSWSSSESWSESWSSESSSWNNWWSESSWSWNWSWSEESSSWWWSWWWNNEEEENWNWWSWWNWNWWWWNNWWSWSSESEEESSWWWWSWNNNWNNWWSSSEESWWSWWWNWWNWSWNNWWSWSWNNENWNNNENEESWSEEENEEENNNENESESESENNWNNNNENENNENWWNNNWNNESESESEENWNNNWWSES","branches":[[6,6,"ESSWSSWSEENEEENWWNEEEESW"],[8,24,"SSSENNNEENWWNEEENESEESWWWSEEE"],[2,30,"NWNEESESENNW"],[20,37,"EENNNWSSWWNNWNNNESENENNENNWNW"],[44,33,"SEEENE"],[40,16,"NNEEENNNESENEEESWWSEESSEEEEESS"],[44,11,"SWWWWWWWWWNENWNWWNENNWNNNEENN"],[38,12,"NNNWNNWNWWWSWWNENWNWNNNENW"],[0,9,"EESENESEESSWNWWWWSESEENW"],[7,17,"SSSESESSSSESESWSSWSEENN"],[20,32,"SSENEESWSSWNWWNNWSSWNNNEENNE"],[21,19,"WNWNENNNNWWSWSESENN"]],"walk":1111,"doors":[{"r":13,"c":34,"k":"A"},{"r":41,"c":32,"k":"B"},{"r":38,"c":13,"k":"C"},{"r":39,"c":16,"k":"D"}]},
+{"title":"The Master Build","rows":46,"cols":40,"hero":"👷","goal":"🏠","goalName":"new house","mission":"The hardest maze. Collect every tool, open every door, then finish the house.","start":[0,0],"end":[45,39],"open":["6c6c686c2c2eaaec6aaaac46eaac2e86ec2e842c","5395569543c16a953c6ac39556c5696953ad6969","3ac579697c3e92c7857c56a93d557c52d6a93c3c","6c53969693e96c39695153c2a955555693c4696d","553a852be83e956c52bc3a946a9395552a955695","57aac56c16c16d553aad6c6d3aaec393c6c7d169","516c7953e93c5153aec55517aec53ac691393c3c","56953852bac39696c51393c38513e853ac6ec569","39696c3c6c3a852d53aaac3ac56ad6ba85513d3c","6e96956d53aaa96952ec696e9514152c693ac16d","156943953c6aae943ad15693a943a94556ac7a95","693abac7c556c52baad693ac2abaaad3bd457ac1","3ea86c513d7953c6ac13aac3aaaac692c13bbc3c","6bac5396c53852d78546c696ac6a93c6baaaabc5","3ac556a953ac3c51695553c7817aaa956ac2c6d5","4695396a9683c53ed6953abbaad6eac53c3c3955","552bc6bea96a9569152d2aec6ad17c1569452c51","53ac53c3ac56e93ac787aa957c3c152952d7ad3c","7ec556942d3952e839296e851543c3ea96b96b85","5139796d43e87c3c6aaa9143c17856946d6c56c5","3c6c3ad55696916956c6ac5692fa954793951555","4395429555696a96953b85396c386953c683a939","7c453c2d553a96abc546a92a93aa96bc53ec6c2c","5393c3a953c2a92c3957aaaaec6ac3c53ed393c5","3ac6d2c6ba96c6c56e956aec513c7c53c53c6c3d","6a9556d3c6a9393953c53c53d6a9513c556953c5","52a9553c556aaaac5455293c13ac3aa9393c543d","7aaa93c539386aa955796aabaac3c6aaaac13bc5","5686ac53eaea96aab95696aac696952aec56aa95","57c3c3bc143c6ba86a97a96c556b83c6953d2ea9","55787ac7a92956c454696c5513bc6a95454143ac","51569693c6c6953d53d69393eaa912ed3bd2fe85","7a93c3c47939694394156aaa96aaea956c3a9569","16aa969516c43c7c43c53ac2a96e92e9556a853c","696ac3aba97bc1553c39683c6e916c38553ec569","5696d6ac6c5692d3ad6abaa9516a93ac53c13954","53c553839553ac7c6952ec6ad696a86d5696aa95","3c553ac46916c555383c557c152bc69153a92ec5","69152ab93aa95517aaa95513ad6c53ec56eaa93d","56ebae8686c2d3c3c2aad56a8553f855553c6ac5","393c43a96d3c56943aaa9396c53c529555695455","6aebbc44516b93c3ea86aaa9396956c391545539","5416c3953c56ec3c7c696ec6aa945552ae93bd2c","53c57aab85395169555295396c6b953ac56c43c5","54553ac6a96c3c3c5396a96a9552e94693957a95","393ba83baa9383a93aa92aba83ba92bbaaa93aa9"],"items":[{"r":6,"c":21,"e":"🧲","name":"magnet"},{"r":28,"c":39,"e":"📐","name":"square"},{"r":19,"c":8,"e":"🪣","name":"bucket"},{"r":18,"c":5,"e":"🪚","name":"saw"},{"r":45,"c":27,"e":"🔦","name":"flashlight"},{"r":1,"c":8,"e":"⚙️","name":"gear"},{"r":9,"c":27,"e":"🔧","name":"wrench"},{"r":45,"c":20,"e":"🔨","name":"hammer"},{"r":7,"c":31,"e":"💡","name":"light bulb"},{"r":19,"c":22,"e":"🪛","name":"screwdriver"},{"r":31,"c":28,"e":"🔩","name":"bolt"},{"r":8,"c":13,"e":"⛏️","name":"pick"},{"r":30,"c":32,"e":"📏","name":"ruler"},{"r":16,"c":30,"e":"🪜","name":"ladder"},{"r":35,"c":28,"e":"🔌","name":"plug"},{"r":15,"c":0,"e":"🔑","name":"key A","key":"A"},{"r":13,"c":11,"e":"🔑","name":"key B","key":"B"},{"r":0,"c":22,"e":"🔑","name":"key C","key":"C"},{"r":0,"c":37,"e":"🔑","name":"key D","key":"D"}],"path":"ESENESSSENENENESSWSWSSSWNWWWNNWSSSSSENENESSWSWSSWSESEESSSESSSENENWNENEENNWSWWSWNNNESENNWWWWNENENESSENESSESENNWNNESEEEENNENNNESSEESSEEEESWSSWSEEESWSESEEEENNEENWWWWWNWWNENEENWWNWNNWSSWNNNWNNNEESSSEENWNEENNEEEESSSSENNESSSENNNNENESSSWSSESWSEESSWSSENEESSEESESSSSESSSSWNNWSSWWNNWSWNWSWSESSEENESENESESESSSSSWWSEESSWSESWSSWWWSWWNENWNNNWSSSSSSSSSWNNNWWNENENWWNWSWWSWSSSSSWNWSWWWWSWSSWNNWSSSEEENEENNESENEEENENWNNESESSSSWWSSEENENNNESSEESWSEEEENNWSWNNENNENWNEEENESESSSWNNWWSSSESESWWSEEE","branches":[[16,6,"ESEESSESWSSSESWWNNNNN"],[9,7,"NWNNNESEENESESENNENNWSWWNWNWN"],[15,22,"WWNNWSSSSEEENESSSESWSWNN"],[0,24,"SSENESSSWWSEEEESEESSWSSWWN"],[19,33,"NEENNNWNWWSESWSSWWWNNWNEES"],[26,39,"WNWNWSSSEESWWWSWNNWWWWWSSESWWS"],[38,25,"WWNWNEENNEENEENEENENNENESSSWN"],[45,26,"WNNWSWWSWW"],[13,1,"WSEESWSSEESSWNWWNNN"],[12,9,"SSEESESWWSSENEENNNWNNNWSWSE"],[5,19,"WWWNNENNWNEEEEESEN"],[12,36,"NNNWWNNEESENNWNNNENWNEN"]],"walk":1334,"doors":[{"r":11,"c":21,"k":"A"},{"r":23,"c":34,"k":"B"},{"r":39,"c":27,"k":"C"},{"r":8,"c":7,"k":"D"}]}
+];
+
+/* Math Trail - maze breaks: the pick-it-up maze game.
+   MT.maze.mount(host, maze, opts) draws one maze from js/maze-data.js inside host and runs it.
+   opts.label   small heading above the title
+   opts.onPick  called each time something is picked up
+   opts.onWin   called with the step count when the maze is cleared; returns the buttons to offer: [{ text, main, fn }] */
+(function () {
+  const N = 1, E = 2, S = 4, W = 8, SVGNS = 'http://www.w3.org/2000/svg';
+  const STEP = { N: [-1, 0], E: [0, 1], S: [1, 0], W: [0, -1] };
+  const TURNS = [[N, -1, 0], [E, 0, 1], [S, 1, 0], [W, 0, -1]];
+  const HELP = 'Move with the arrow keys, drag through the maze, or tap the arrows.';
+  const ARROWS = [['u', '-1,0', 'Up', 'M10 4l7 11H3z'], ['l', '0,-1', 'Left', 'M4 10l11-7v14z'], ['r', '0,1', 'Right', 'M16 10L5 3v14z'], ['d', '1,0', 'Down', 'M10 16L3 5h14z']];
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  let cur = null;                                  // the maze being played, or null
+
+  const cells = (r, c, letters) => { const out = [[r, c]]; for (const ch of letters) { r += STEP[ch][0]; c += STEP[ch][1]; out.push([r, c]); } return out; };
+  const el = (name, attrs, text) => { const n = document.createElementNS(SVGNS, name); for (const k in attrs) n.setAttribute(k, attrs[k]); if (text != null) n.textContent = text; return n; };
+  const mid = v => v * 10 + 5;
+  const pts = list => list.map(([r, c]) => mid(c) + ',' + mid(r)).join(' ');
+  const openBits = (m, r, c) => parseInt(m.open[r][c], 16);
+  const hasKey = k => cur.got.has(cur.m.items.findIndex(it => it.key === k));
+  const part = name => cur.host.querySelector(`[data-r="${name}"]`);
+  const say = t => { part('say').textContent = t; };
+  const alive = () => { if (cur && !cur.host.isConnected) cur = null; return !!cur; };
+
+  function drawBoard() {
+    const { m, pos } = cur, svg = cur.svg, p = cur.parts = {};
+    const sw = Math.min(1.15, 0.5 + m.cols * 0.03);
+    svg.setAttribute('viewBox', `${-sw} ${-sw} ${m.cols * 10 + 2 * sw} ${m.rows * 10 + 2 * sw}`);
+    svg.setAttribute('aria-label', `${m.title} maze, ${m.cols} by ${m.rows} squares`);
+    svg.replaceChildren();
+    for (const [r, c] of [m.start, m.end]) svg.append(el('rect', { class: 'mz-tint', x: c * 10, y: r * 10, width: 10, height: 10 }));
+
+    p.hint = el('g', {});
+    p.hint.append(el('polyline', { class: 'mz-hint', points: pts(cells(m.start[0], m.start[1], m.path)) }));
+    for (const b of m.branches) p.hint.append(el('polyline', { class: 'mz-hint side', points: pts(cells(b[0], b[1], b[2])) }));
+    p.hint.style.display = 'none';
+    svg.append(p.hint);
+
+    p.trail = el('polyline', { class: 'mz-trail' });
+    svg.append(p.trail);
+
+    let d = '';
+    for (let r = 0; r < m.rows; r++) for (let c = 0; c < m.cols; c++) {
+      const o = openBits(m, r, c), x = c * 10, y = r * 10;
+      if (!(o & N)) d += `M${x} ${y}h10`;
+      if (!(o & W)) d += `M${x} ${y}v10`;
+      if (r === m.rows - 1) d += `M${x} ${y + 10}h10`;
+      if (c === m.cols - 1) d += `M${x + 10} ${y}v10`;
+    }
+    svg.append(el('path', { class: 'mz-walls', d, 'stroke-width': sw }));
+
+    p.doors = (m.doors || []).map(dr => {
+      const g = el('g', { class: 'mz-door', 'data-k': dr.k });
+      g.append(el('rect', { x: dr.c * 10 + 0.8, y: dr.r * 10 + 0.8, width: 8.4, height: 8.4, rx: 1.3 }));
+      g.append(el('text', { class: 'mz-ltr', x: mid(dr.c), y: mid(dr.r), dy: '.36em', 'font-size': 6 }, dr.k));
+      svg.append(g);
+      return g;
+    });
+    p.items = m.items.map(it => {
+      const g = el('g', { class: it.key ? 'mz-item mz-keyb' : 'mz-item' });
+      if (it.key) {
+        g.setAttribute('data-k', it.key);
+        g.append(el('circle', { cx: mid(it.c), cy: mid(it.r), r: 3.7 }));
+        g.append(el('text', { class: 'mz-ltr', x: mid(it.c), y: mid(it.r), dy: '.36em', 'font-size': 5.4 }, it.key));
+      } else g.append(el('text', { class: 'mz-em', x: mid(it.c), y: mid(it.r), dy: '.36em', 'font-size': 6.6 }, it.e));
+      svg.append(g);
+      return g;
+    });
+
+    // a start or finish in the middle of the maze gets a wide ring so it is easy to find again
+    const inside = ([r]) => r > 0 && r < m.rows - 1;
+    if (inside(m.start)) svg.append(el('circle', { class: 'mz-mark', cx: mid(m.start[1]), cy: mid(m.start[0]), r: 8 }));
+    p.goal = el('g', { class: 'mz-goal' });
+    p.goal.append(el('circle', { class: 'mz-ring', cx: mid(m.end[1]), cy: mid(m.end[0]), r: inside(m.end) ? 8 : 4.3 }));
+    p.goal.append(el('text', { class: 'mz-em', x: mid(m.end[1]), y: mid(m.end[0]), dy: '.36em', 'font-size': 6.4 }, m.goal));
+    svg.append(p.goal);
+
+    p.player = el('g', { class: 'mz-player' });
+    p.player.style.transform = `translate(${pos[1] * 10}px,${pos[0] * 10}px)`;
+    p.player.append(el('circle', { cx: 5, cy: 5, r: 4.2 }));
+    p.player.append(el('text', { class: 'mz-em', x: 5, y: 5, dy: '.36em', 'font-size': 5.6 }, m.hero));
+    svg.append(p.player);
+  }
+
+  function update() {
+    const { m, parts: p, pos, got } = cur;
+    p.trail.setAttribute('points', pts(cur.trail));
+    p.player.style.transform = `translate(${pos[1] * 10}px,${pos[0] * 10}px)`;
+    p.items.forEach((g, i) => g.classList.toggle('got', got.has(i)));
+    p.goal.classList.toggle('open', got.size === m.items.length);
+    [...part('chips').children].forEach((li, i) => li.classList.toggle('got', got.has(i)));
+    p.doors.forEach((g, i) => g.classList.toggle('open', hasKey(m.doors[i].k)));
+    part('count').textContent = `Picked up ${got.size} of ${m.items.length} · ${cur.steps} steps (shortest way: ${m.walk})`;
+  }
+
+  // Big mazes scroll inside their frame; keep the player in view.
+  function follow(smooth) {
+    const sc = part('scroller'), svg = cur.svg, vb = svg.viewBox.baseVal, pos = cur.pos;
+    if (sc.scrollWidth <= sc.clientWidth + 1 && sc.scrollHeight <= sc.clientHeight + 1) return;
+    const k = svg.clientWidth / vb.width, cell = 10 * k;
+    const px = (mid(pos[1]) - vb.x) * k, py = (mid(pos[0]) - vb.y) * k;
+    let left = sc.scrollLeft, top = sc.scrollTop;
+    if (px < left + 3 * cell || px > left + sc.clientWidth - 3 * cell) left = px - sc.clientWidth / 2;
+    if (py < top + 3 * cell || py > top + sc.clientHeight - 3 * cell) top = py - sc.clientHeight / 2;
+    if (left !== sc.scrollLeft || top !== sc.scrollTop) sc.scrollTo({ left, top, behavior: smooth ? 'smooth' : 'auto' });
+  }
+
+  function reset() {
+    const m = cur.m;
+    cur.pos = [...m.start]; cur.got = new Set(); cur.trail = [[...m.start]]; cur.steps = 0; cur.won = false;
+    clearTimeout(cur.hintTimer);
+    const old = cur.host.querySelector('.mz-win'); if (old) old.remove();
+    drawBoard(); update(); follow(false);
+    say(HELP);
+  }
+
+  function win() {
+    const { m, steps, opts } = cur;
+    cur.won = true;
+    const acts = [...((opts.onWin && opts.onWin(steps)) || []), { text: 'Play again', fn: reset }];
+    const box = document.createElement('div');
+    box.className = 'mz-win';
+    box.innerHTML = `<div><h2>Maze cleared!</h2><p class="mz-haul" aria-hidden="true">${m.items.map(it => esc(it.e)).join('')}</p>
+      <p>You picked up all ${m.items.length} and reached the ${esc(m.goalName)} in ${steps} steps. ${steps <= m.walk ? 'That is the shortest way possible!' : `The shortest way is ${m.walk}.`}</p>
+      <p class="row">${acts.map((a, i) => `<button class="btn ${a.main ? 'main' : ''}" type="button" data-a="${i}">${esc(a.text)}</button>`).join('')}</p></div>`;
+    box.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => acts[+b.dataset.a].fn()));
+    part('stage').append(box);
+    say('');
+    box.querySelector('[data-a]').focus({ preventScroll: true });
+  }
+
+  function move(dr, dc) {
+    if (!alive() || cur.won) return false;
+    const { m, pos, got } = cur;
+    const bit = dr === -1 ? N : dr === 1 ? S : dc === 1 ? E : W;
+    if (!(openBits(m, pos[0], pos[1]) & bit)) return false;
+    const door = (m.doors || []).find(d => d.r === pos[0] + dr && d.c === pos[1] + dc);
+    if (door && !hasKey(door.k)) { say(`Door ${door.k} is locked. Find key ${door.k} first.`); return false; }
+    const now = cur.pos = [pos[0] + dr, pos[1] + dc];
+    cur.steps++;
+    const prev = cur.trail[cur.trail.length - 2];
+    if (prev && prev[0] === now[0] && prev[1] === now[1]) cur.trail.pop(); else cur.trail.push(now);
+
+    const idx = m.items.findIndex(it => it.r === now[0] && it.c === now[1]);
+    if (idx >= 0 && !got.has(idx)) {
+      got.add(idx);
+      const left = m.items.length - got.size, it = m.items[idx];
+      const what = it.key ? `key ${it.key}. Door ${it.key} is open now` : `the ${it.name}`;
+      say(left ? `You picked up ${what}. ${left} more to find.` : `You picked up ${what}. That is everything! Head to the ${m.goalName}.`);
+      if (cur.opts.onPick) cur.opts.onPick();
+    }
+    update();
+    follow(true);
+    if (now[0] === m.end[0] && now[1] === m.end[1]) {
+      const left = m.items.length - got.size;
+      if (left === 0) win(); else say(`Not yet. ${left} more to pick up before the ${m.goalName}.`);
+    }
+    return true;
+  }
+
+  // Dragging or tapping: walk down a clear corridor, or around a nearby corner (up to 3 steps).
+  function shortRoute(target, limit) {
+    const { m, pos } = cur, key = ([r, c]) => r * 100 + c;
+    const from = new Map([[key(pos), null]]);
+    let frontier = [pos];
+    for (let depth = 0; depth < limit && frontier.length; depth++) {
+      const next = [];
+      for (const cell of frontier) {
+        const o = openBits(m, cell[0], cell[1]);
+        for (const [bit, dr, dc] of TURNS) {
+          if (!(o & bit)) continue;
+          const n = [cell[0] + dr, cell[1] + dc];
+          if (from.has(key(n))) continue;
+          from.set(key(n), cell);
+          if (n[0] === target[0] && n[1] === target[1]) {
+            const route = []; let x = n;
+            while (from.get(key(x))) { const q = from.get(key(x)); route.unshift([x[0] - q[0], x[1] - q[1]]); x = q; }
+            return route;
+          }
+          next.push(n);
+        }
+      }
+      frontier = next;
+    }
+    return null;
+  }
+  function walkTo(target) {
+    const m = cur.m;
+    if (target[0] < 0 || target[1] < 0 || target[0] >= m.rows || target[1] >= m.cols) return;
+    const dr = Math.sign(target[0] - cur.pos[0]), dc = Math.sign(target[1] - cur.pos[1]);
+    if (!dr && !dc) return;
+    if (!dr || !dc) {
+      let guard = 50, moved = false;
+      while (guard-- && (cur.pos[0] !== target[0] || cur.pos[1] !== target[1]) && move(dr, dc)) moved = true;
+      if (moved) return;
+    }
+    const route = shortRoute(target, 3);
+    if (route) for (const [a, b] of route) if (!move(a, b)) break;
+  }
+  function cellAt(e) {
+    const svg = cur.svg, box = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+    const x = (e.clientX - box.left) / box.width * vb.width + vb.x;
+    const y = (e.clientY - box.top) / box.height * vb.height + vb.y;
+    return [Math.floor(y / 10), Math.floor(x / 10)];
+  }
+
+  function mount(host, m, opts) {
+    opts = opts || {};
+    const doors = m.doors || [];
+    const badge = (cls, k) => `<span class="${cls}" data-k="${k}">${k}</span>`;
+    host.innerHTML = `<div class="mz" style="--ar:${m.cols / m.rows};--cols:${m.cols}">
+      <section class="mz-info">
+        ${opts.label ? `<p class="label">${esc(opts.label)}</p>` : ''}
+        <h1>${esc(m.title)}</h1>
+        <p class="lead">${esc(m.mission)}</p>
+        <p class="mz-ends">Start <span>${esc(m.hero)}</span> → Finish <span>${esc(m.goal)}</span></p>
+        ${doors.length ? `<p class="mz-rule">${doors.length > 1 ? 'Doors' : 'Door'} ${doors.map(d => badge('mz-db', d.k)).join(' ')} ${doors.length > 1 ? 'open with keys' : 'opens with key'} ${doors.map(d => badge('mz-kb', d.k)).join(' ')}</p>` : ''}
+      </section>
+      <section class="mz-stage" data-r="stage"><div class="mz-scroller" data-r="scroller"><svg class="mz-board" role="img"></svg></div></section>
+      <section class="mz-list">
+        <p class="mz-count" data-r="count"></p>
+        <ul class="mz-chips" data-r="chips">${m.items.map(it => `<li class="mz-chip"><span class="tick"></span>${it.key ? badge('mz-kb', it.key) : `<span class="e">${esc(it.e)}</span>`}${esc(it.name)}</li>`).join('')}</ul>
+        <p class="mz-say" data-r="say" aria-live="polite"></p>
+      </section>
+      <section class="mz-controls">
+        <div class="mz-pad" aria-label="Move">${ARROWS.map(([cls, d, name, shape]) => `<button class="${cls}" type="button" data-d="${d}" aria-label="${name}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="${shape}"/></svg></button>`).join('')}</div>
+        <div class="mz-acts"><button class="btn" type="button" data-r="hint">Show the way</button><button class="btn" type="button" data-r="reset">Start over</button></div>
+      </section>
+    </div>`;
+    const svg = host.querySelector('.mz-board');
+    cur = { host, m, opts, svg, parts: {}, hintTimer: null };
+
+    let dragging = false;
+    svg.addEventListener('pointerdown', e => { if (!alive()) return; dragging = true; try { svg.setPointerCapture(e.pointerId); } catch (x) {} walkTo(cellAt(e)); e.preventDefault(); });
+    svg.addEventListener('pointermove', e => { if (dragging && alive()) walkTo(cellAt(e)); });
+    for (const t of ['pointerup', 'pointercancel']) svg.addEventListener(t, () => { dragging = false; });
+
+    for (const b of host.querySelectorAll('.mz-pad button')) {
+      const [dr, dc] = b.dataset.d.split(',').map(Number);
+      let timer = null;
+      const stop = () => { clearInterval(timer); timer = null; };
+      b.addEventListener('pointerdown', e => { e.preventDefault(); move(dr, dc); stop(); timer = setInterval(() => { if (b.isConnected) move(dr, dc); else stop(); }, 150); });
+      for (const t of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(t, stop);
+      b.addEventListener('click', e => { if (e.detail === 0) move(dr, dc); });      // keyboard activation
+    }
+    part('hint').addEventListener('click', () => {
+      const h = cur.parts.hint;
+      h.style.display = '';
+      clearTimeout(cur.hintTimer);
+      cur.hintTimer = setTimeout(() => { h.style.display = 'none'; }, 4000);
+      say('The red line shows the way for a few seconds. Dashed parts are side trips.');
+    });
+    part('reset').addEventListener('click', reset);
+    reset();
+  }
+
+  const KEYS = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1], w: [-1, 0], s: [1, 0], a: [0, -1], d: [0, 1] };
+  window.addEventListener('keydown', e => {
+    if (!alive() || e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = KEYS[e.key] || KEYS[e.key.toLowerCase()];
+    if (!k) return;
+    e.preventDefault();
+    move(k[0], k[1]);
+  });
+
+  MT.maze = { mount, move, get state() { return alive() ? { m: cur.m, pos: cur.pos, got: [...cur.got], steps: cur.steps, won: cur.won } : null; } };
+})();
+
+/* Math Trail - the game: screens, puzzle play, hearts, stars, maze breaks and saved progress. */
 (function () {
   const SAVE_KEY = 'mathtrail-v1';
   const ROUND = 8, BOSS_ROUND = 10, HEARTS = 3;
@@ -1368,8 +1770,9 @@ sup{font-size:.62em;line-height:0}
   const view = $('view'), app = $('app');
 
   // ---------- saved progress (this browser only)
-  let save = { stars: {}, sound: true };
+  let save = { stars: {}, mazes: {}, sound: true };
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && s.stars) save = s; } catch (e) {}
+  save.mazes = save.mazes || {};
   const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
 
   // ---------- curriculum helpers
@@ -1383,6 +1786,13 @@ sup{font-size:.62em;line-height:0}
   const unlocked = (g, s) => s === 0 || starsOf(g, s - 1) > 0;
   const gradeStars = g => stops(g).reduce((a, _, s) => a + starsOf(g, s), 0);
   const totalStars = () => grades.reduce((a, gr) => a + gradeStars(gr.grade), 0);
+  // maze breaks: three per grade, unlocked by passing stops 2, 4 and 6. save.mazes keeps the best step count.
+  const mazeOf = (g, j) => MT.mazes && MT.maze && MT.mazes[(g - 1) * 3 + j];
+  const mazeId = (g, j) => `g${g}m${j}`;
+  const mazeAfter = (g, s) => (s % 2 === 1 && mazeOf(g, (s - 1) / 2) ? (s - 1) / 2 : -1);
+  const mazeOpen = (g, j) => starsOf(g, 2 * j + 1) > 0;
+  const mazeBest = (g, j) => save.mazes[mazeId(g, j)] || 0;
+  const mazesDone = g => [0, 1, 2].filter(j => mazeBest(g, j)).length;
   const kindsOf = st => [...new Set(st.gens.slice(0, 12).map(gen => { try { return KIND[gen().kind]; } catch (e) { return null; } }).filter(Boolean))];
 
   // ---------- text: {a/b} becomes a stacked fraction, ^ becomes a superscript
@@ -1428,8 +1838,9 @@ sup{font-size:.62em;line-height:0}
   }
 
   // ---------- chrome
-  function chrome(g) {
+  function chrome(g, wide) {
     app.dataset.band = g ? band(g) : 1;
+    app.classList.toggle('wide', !!wide);
     $('total').innerHTML = `<b>★</b> ${totalStars()}`;
     $('soundBtn').textContent = save.sound ? 'Sound on' : 'Sound off';
     window.scrollTo(0, 0);
@@ -1443,7 +1854,7 @@ sup{font-size:.62em;line-height:0}
     view.innerHTML = `
       <section class="stack">
         <h1>Pick your grade</h1>
-        <p class="lead">Each grade is a trail of six stops. Read the lesson, solve the puzzles, and pass a stop to unlock the next one. You get 3 hearts per stop.</p>
+        <p class="lead">Each grade is a trail of six stops. Read the lesson, solve the puzzles, and pass a stop to unlock the next one. You get 3 hearts per stop, and every second stop unlocks a maze break.</p>
       </section>
       <ul class="grades">${grades.map(gr => {
         const got = gradeStars(gr.grade), max = stops(gr.grade).length * 3;
@@ -1451,13 +1862,13 @@ sup{font-size:.62em;line-height:0}
           <span class="g-num">${gr.grade}</span>
           <span class="g-body"><b>Grade ${gr.grade}</b><small>${esc(gr.title)}</small>
           <span class="g-prog"><i style="width:${Math.round(got / max * 100)}%"></i></span>
-          <span class="g-stars"><b>★</b> ${got} / ${max}</span></span></button></li>`;
+          <span class="g-stars"><b>★</b> ${got} / ${max}${mazeOf(gr.grade, 0) ? ` · Mazes ${mazesDone(gr.grade)} / 3` : ''}</span></span></button></li>`;
       }).join('')}</ul>
       <div id="resetBox"><button class="link" id="resetBtn" type="button">Reset all progress</button></div>`;
     view.querySelectorAll('.grade').forEach(b => b.addEventListener('click', () => trail(+b.dataset.g)));
     $('resetBtn').addEventListener('click', () => {
-      $('resetBox').innerHTML = `<div class="confirm stack"><p>Erase every star on this device? This cannot be undone.</p><div class="row"><button class="btn" id="yesReset" type="button">Erase progress</button><button class="btn" id="noReset" type="button">Keep it</button></div></div>`;
-      $('yesReset').addEventListener('click', () => { save.stars = {}; persist(); home(); });
+      $('resetBox').innerHTML = `<div class="confirm stack"><p>Erase every star and maze win on this device? This cannot be undone.</p><div class="row"><button class="btn" id="yesReset" type="button">Erase progress</button><button class="btn" id="noReset" type="button">Keep it</button></div></div>`;
+      $('yesReset').addEventListener('click', () => { save.stars = {}; save.mazes = {}; persist(); home(); });
       $('noReset').addEventListener('click', home);
     });
   }
@@ -1465,11 +1876,18 @@ sup{font-size:.62em;line-height:0}
   function trail(g) {
     chrome(g);
     const st = stops(g);
+    const brk = j => {
+      const m = mazeOf(g, j), open = mazeOpen(g, j), best = mazeBest(g, j), doors = (m.doors || []).length;
+      return `<li class="stop brk ${best ? 'done' : open ? 'open' : 'locked'}">
+          <span class="pin" aria-hidden="true">${esc(m.hero)}</span>
+          <div><h2>Maze break: ${esc(m.title)}</h2><small>${open ? `${m.cols} × ${m.rows} squares · ${m.items.length} things to pick up${doors ? ` · ${doors} locked ${doors === 1 ? 'door' : 'doors'}` : ''}` : `Pass stop ${2 * j + 2} to unlock this maze`}</small>${best ? `<p class="brk-best">Cleared in ${best} steps</p>` : ''}</div>
+          <button class="btn ${open && !best ? 'main' : ''}" type="button" data-m="${j}" ${open ? '' : 'disabled'}>${best ? 'Play again' : open ? 'Play maze' : 'Locked'}</button></li>`;
+    };
     view.innerHTML = `
       <section class="stack">
         <button class="link" id="back" type="button">All grades</button>
         <h1>Grade ${g}</h1>
-        <p class="lead">${esc(grades[g - 1].title)}. Clear each stop in order to reach the challenge at the end.</p>
+        <p class="lead">${esc(grades[g - 1].title)}. Clear each stop in order to reach the challenge at the end.${mazeOf(g, 0) ? ' Every second stop unlocks a maze break.' : ''}</p>
         <div class="row"><button class="btn" id="bookBtn" type="button">Read all Grade ${g} lessons</button></div>
       </section>
       <ol class="trail">${st.map((s, i) => {
@@ -1477,11 +1895,34 @@ sup{font-size:.62em;line-height:0}
         return `<li class="stop ${cls}">
           <span class="pin">${s.boss ? '★' : i + 1}</span>
           <div><h2>${esc(s.name)}</h2><small>${open ? esc(kindsOf(s).join(' · ')) : 'Pass the stop before this one to unlock it'}</small>${got ? `<p class="st">${starRow(got)}</p>` : ''}</div>
-          <button class="btn ${open && !got ? 'main' : ''}" type="button" data-s="${i}" ${open ? '' : 'disabled'}>${got ? 'Play again' : open ? 'Start' : 'Locked'}</button></li>`;
+          <button class="btn ${open && !got ? 'main' : ''}" type="button" data-s="${i}" ${open ? '' : 'disabled'}>${got ? 'Play again' : open ? 'Start' : 'Locked'}</button></li>${mazeAfter(g, i) >= 0 ? brk(mazeAfter(g, i)) : ''}`;
       }).join('')}</ol>`;
     $('back').addEventListener('click', home);
     $('bookBtn').addEventListener('click', () => book(g));
-    view.querySelectorAll('.stop .btn').forEach(b => b.addEventListener('click', () => lesson(g, +b.dataset.s)));
+    view.querySelectorAll('.stop .btn[data-s]').forEach(b => b.addEventListener('click', () => lesson(g, +b.dataset.s)));
+    view.querySelectorAll('.stop .btn[data-m]').forEach(b => b.addEventListener('click', () => maze(g, +b.dataset.m)));
+  }
+
+  // a maze break: pick up everything, reach the finish, then carry on along the trail
+  function maze(g, j) {
+    const m = mazeOf(g, j), s = 2 * j + 1, all = stops(g), lastStop = s === all.length - 1;
+    if (!m || !mazeOpen(g, j)) return trail(g);
+    run = null;
+    chrome(g, true);
+    view.innerHTML = `<button class="link" id="back" type="button">Grade ${g} trail</button><div id="mazeHost"></div>`;
+    $('back').addEventListener('click', () => trail(g));
+    MT.maze.mount($('mazeHost'), m, {
+      label: `Grade ${g} · Maze break ${j + 1} of 3 · ${m.cols} × ${m.rows}`,
+      onPick: () => tone(880, 0, 0.09),
+      onWin(steps) {
+        save.mazes[mazeId(g, j)] = Math.min(mazeBest(g, j) || steps, steps); persist(); sfx.win(); confetti();
+        return [
+          lastStop ? (g < 12 ? { text: `On to Grade ${g + 1}`, main: true, fn: () => trail(g + 1) } : { text: 'Back to all grades', main: true, fn: home })
+            : { text: `Next stop: ${all[s + 1].name}`, main: true, fn: () => lesson(g, s + 1) },
+          { text: `Grade ${g} trail`, fn: () => trail(g) },
+        ];
+      },
+    });
   }
 
   // the full lesson for one stop; the challenge stop gets a recap of the grade's five topics
@@ -1493,7 +1934,7 @@ sup{font-size:.62em;line-height:0}
 
   function lesson(g, s) {
     chrome(g);
-    const st = stops(g)[s], n = st.boss ? BOSS_ROUND : ROUND, again = starsOf(g, s) > 0;
+    const st = stops(g)[s], n = st.boss ? BOSS_ROUND : ROUND, again = starsOf(g, s) > 0, j = mazeAfter(g, s);
     view.innerHTML = `
       <button class="link" id="back" type="button">Grade ${g} trail</button>
       <article class="panel lesson">
@@ -1501,7 +1942,7 @@ sup{font-size:.62em;line-height:0}
         <h1>${esc(st.name)}</h1>
         ${again ? '<div class="row"><button class="btn" id="skip" type="button">Skip the lesson</button></div>' : ''}
         ${lessonBody(g, s)}
-        <p class="rules">${n} puzzles. You have ${HEARTS} hearts, and a wrong answer costs one. Finish with at least one heart to pass.</p>
+        <p class="rules">${n} puzzles. You have ${HEARTS} hearts, and a wrong answer costs one. Finish with at least one heart to pass.${j >= 0 && !mazeOpen(g, j) ? ' Pass this stop to unlock a maze break.' : ''}</p>
         <div class="row"><button class="btn main" id="go" type="button">Start puzzles</button></div>
       </article>`;
     $('back').addEventListener('click', () => trail(g));
@@ -1576,15 +2017,18 @@ sup{font-size:.62em;line-height:0}
     const { g, s, st, qs, hearts, right } = run, passed = hearts > 0, id = MT.sectionId(g, s), all = stops(g);
     if (passed) { save.stars[id] = Math.max(save.stars[id] || 0, hearts); persist(); sfx.win(); confetti(); } else sfx.lose();
     chrome(g);
-    const lastStop = s === all.length - 1;
+    const lastStop = s === all.length - 1, j = passed ? mazeAfter(g, s) : -1, mz = j >= 0 && !mazeBest(g, j) ? mazeOf(g, j) : null;
     view.innerHTML = passed ? `
       <article class="panel">
         <p class="label">Grade ${g} · ${esc(st.name)}</p>
         <h1>${lastStop ? `Grade ${g} complete!` : 'Stop cleared!'}</h1>
         <p class="bigstars pop">${starRow(hearts)}</p>
         <p>You got ${right} of ${qs.length} right and kept ${hearts} ${hearts === 1 ? 'heart' : 'hearts'}.${hearts < 3 ? ' Play again to try for 3 stars.' : ''}</p>
+        ${mz ? `<div class="reward"><p class="label">Maze break unlocked</p><h2><span class="emo" aria-hidden="true">${esc(mz.hero)}</span> ${esc(mz.title)}</h2>
+          <p>You earned a break from math. ${esc(mz.mission)}</p>
+          <div class="row"><button class="btn main" id="m" type="button">Play the maze</button></div></div>` : ''}
         <div class="row">
-          ${lastStop ? (g < 12 ? '<button class="btn main" id="a" type="button">On to Grade ' + (g + 1) + '</button>' : '<button class="btn main" id="a" type="button">Back to all grades</button>') : `<button class="btn main" id="a" type="button">Next stop: ${esc(all[s + 1].name)}</button>`}
+          <button class="btn ${mz ? '' : 'main'}" id="a" type="button">${lastStop ? (g < 12 ? `On to Grade ${g + 1}` : 'Back to all grades') : `Next stop: ${esc(all[s + 1].name)}`}</button>
           <button class="btn" id="b" type="button">Play again</button><button class="btn" id="c" type="button">Grade ${g} trail</button>
         </div>
       </article>` : `
@@ -1600,7 +2044,8 @@ sup{font-size:.62em;line-height:0}
     $('b').addEventListener('click', () => start(g, s));
     $('c').addEventListener('click', () => trail(g));
     if ($('d')) $('d').addEventListener('click', () => lesson(g, s));
-    ($('a') || $('b')).focus({ preventScroll: true });
+    if ($('m')) $('m').addEventListener('click', () => maze(g, j));
+    ($('m') || $('a') || $('b')).focus({ preventScroll: true });
   }
 
   // ---------- puzzle kinds.  Each builds its controls and calls grade() once.
@@ -1720,7 +2165,7 @@ sup{font-size:.62em;line-height:0}
   });
 
   // small hook used by automated tests
-  window.MathTrail = { get run() { return run; }, home, trail, lesson, book, start, grade, save: () => save };
+  window.MathTrail = { get run() { return run; }, home, trail, lesson, book, maze, start, grade, save: () => save };
   home();
 })();
 
