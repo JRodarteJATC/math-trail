@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Math puzzles for grades 1 to 12. Pass each stop to unlock the next.">
+<title>Math Trail</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700;800&display=swap">
+<style>
+/* Layout: one centered column. Home is a grid of grade cards; a grade is a winding trail of stops;
+   a puzzle is a single card with a heads-up bar (progress dots and hearts) above it. */
+:root{
+  --bg:#eef3ea; --surface:#fbfdf8; --ink:#1d2a2e; --muted:#566669; --line:#cbd6c9; --on-accent:#ffffff;
+  --band1:#23794a; --band2:#c9461f; --band3:#14709f; --band4:#5546cf;
+  --good:#1c8748; --bad:#cf2e24; --star:#c98a00;
+  --accent:var(--band1);
+  --font-display:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",sans-serif;
+  --font-body:"Nunito","Avenir Next","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131b1e; --surface:#1b262a; --ink:#edf2ec; --muted:#9db0ae; --line:#31434a; --on-accent:#10181b;
+    --band1:#62d394; --band2:#ff9068; --band3:#62c0f2; --band4:#aaa0ff;
+    --good:#5fd08e; --bad:#ff7b70; --star:#ffc94a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131b1e; --surface:#1b262a; --ink:#edf2ec; --muted:#9db0ae; --line:#31434a; --on-accent:#10181b;
+  --band1:#62d394; --band2:#ff9068; --band3:#62c0f2; --band4:#aaa0ff;
+  --good:#5fd08e; --bad:#ff7b70; --star:#ffc94a;
+  color-scheme:dark;
+}
+[data-band="1"]{--accent:var(--band1)}
+[data-band="2"]{--accent:var(--band2)}
+[data-band="3"]{--accent:var(--band3)}
+[data-band="4"]{--accent:var(--band4)}
+
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5;margin:0}
+h1,h2,h3,p,ul,ol{margin:0}
+ul,ol{list-style:none;padding:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:14px 40px;display:flex;flex-direction:column;gap:20px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font:600 24px/1 var(--font-display);background:none;border:0;padding:6px 0;cursor:pointer}
+.brand span{color:var(--accent)}
+.top-right{display:flex;align-items:center;gap:10px}
+.total{font-weight:800;font-variant-numeric:tabular-nums}
+.total b,.st,.bigstars,.g-stars b{color:var(--star)}
+.ghost,.btn{font-weight:700;font-size:15px;line-height:1;padding:11px 16px;border-radius:12px;border:2px solid var(--line);background:var(--surface);cursor:pointer}
+.ghost:hover,.btn:hover{border-color:var(--accent)}
+.btn.main{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-size:17px;padding:13px 22px}
+.btn[disabled]{opacity:.45;cursor:default}
+.link{align-self:flex-start;text-align:left;background:none;border:0;padding:4px 0;font-weight:700;color:var(--muted);text-decoration:underline;cursor:pointer}
+.label{font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+h1{font:600 clamp(28px,5vw,38px)/1.12 var(--font-display);text-wrap:balance}
+.lead{color:var(--muted);max-width:60ch}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.stack{display:flex;flex-direction:column;gap:10px}
+
+/* home */
+.grades{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.grade{width:100%;height:100%;display:flex;gap:14px;align-items:center;text-align:left;padding:14px;border-radius:16px;border:2px solid var(--line);background:var(--surface);cursor:pointer}
+.grade:hover{border-color:var(--accent)}
+.g-num{flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font:600 26px/1 var(--font-display)}
+.g-body{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.g-body b{font:600 19px/1.1 var(--font-display)}
+.g-body small{font-size:13.5px;line-height:1.3;color:var(--muted)}
+.g-prog{height:7px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:4px}
+.g-prog i{display:block;height:100%;background:var(--accent)}
+.g-stars{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* trail */
+.trail{display:flex;flex-direction:column;gap:12px;position:relative}
+.stop{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 14px;border-radius:16px;border:2px solid var(--line);background:var(--surface);width:min(100%,620px)}
+.stop:nth-child(even){align-self:flex-end}
+.stop.locked{opacity:.55;border-style:dashed}
+.stop.open{border-color:var(--accent)}
+.pin{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font:600 21px/1 var(--font-display);background:var(--bg);border:2px solid var(--line)}
+.stop.done .pin,.stop.open .pin{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.stop h2{font:600 19px/1.15 var(--font-display)}
+.stop small{color:var(--muted);font-size:13.5px}
+.st{font-size:18px;letter-spacing:2px;line-height:1}
+.st i{font-style:normal;color:var(--line)}
+
+/* lesson and result */
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.tip{font-size:19px;line-height:1.55;max-width:62ch}
+.rules{color:var(--muted)}
+.bigstars{font-size:44px;letter-spacing:6px;line-height:1}
+.bigstars i{font-style:normal;color:var(--line)}
+
+/* play */
+.hud{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dots li{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);background:var(--surface)}
+.dots li.ok{background:var(--good);border-color:var(--good)}
+.dots li.no{background:var(--bad);border-color:var(--bad)}
+.dots li.now{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.hearts{font-size:24px;letter-spacing:3px;color:var(--bad);line-height:1}
+.hearts i{font-style:normal;color:var(--line)}
+.q{font:600 clamp(22px,4.2vw,30px)/1.3 var(--font-display);text-wrap:balance}
+.hint{color:var(--muted);font-size:15px}
+.figbox{display:flex;justify-content:center}
+.fig{width:100%;height:auto}
+
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opts.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.opts.long{grid-template-columns:minmax(0,1fr)}
+.opt,.tile{min-height:58px;padding:10px 12px;border-radius:14px;border:2px solid var(--line);background:var(--bg);font:600 21px/1.25 var(--font-display);cursor:pointer;overflow-wrap:anywhere}
+.opt:hover,.tile:hover{border-color:var(--accent)}
+.opt.sel,.tile.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--surface))}
+.opt.right,.tile.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 20%,var(--surface))}
+.opt.wrong,.tile.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 16%,var(--surface))}
+.opt[disabled],.tile[disabled]{cursor:default}
+.tiles{display:flex;flex-wrap:wrap;gap:10px}
+.tile{min-width:64px}
+.slots{min-height:66px;padding:8px;border-radius:14px;border:2px dashed var(--line);align-items:center}
+.cmp{display:flex;align-items:center;justify-content:center;gap:16px;font:600 clamp(26px,6vw,40px)/1.1 var(--font-display)}
+.cmp .slot{width:64px;height:64px;border-radius:14px;border:2px dashed var(--accent);display:grid;place-items:center;color:var(--accent)}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px}
+.cols .tile{width:100%}
+.tile.paired{border-color:var(--good);background:color-mix(in srgb,var(--good) 20%,var(--surface))}
+.typed{min-height:62px;min-width:180px;padding:8px 18px;border-radius:14px;border:2px solid var(--accent);background:var(--bg);font:600 32px/1.4 var(--font-display);text-align:center;font-variant-numeric:tabular-nums}
+.typed.empty{color:var(--muted);font-size:18px;line-height:44px}
+.keys{display:grid;grid-template-columns:repeat(4,minmax(0,64px));gap:8px;justify-content:center}
+.keys button{height:54px;border-radius:12px;border:2px solid var(--line);background:var(--bg);font:600 22px/1 var(--font-display);cursor:pointer}
+.keys button:hover{border-color:var(--accent)}
+.sum{font-weight:800;font-variant-numeric:tabular-nums}
+.center{display:flex;flex-direction:column;align-items:center;gap:12px}
+
+.feedback{border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;border:2px solid var(--good);background:color-mix(in srgb,var(--good) 12%,var(--surface))}
+.feedback.no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.verdict{font:600 21px/1.2 var(--font-display)}
+.feedback .btn{align-self:flex-start;margin-top:6px}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.pop{animation:pop .35s}
+@keyframes pop{50%{transform:scale(1.06)}}
+@media (prefers-reduced-motion: reduce){.shake,.pop{animation:none}}
+
+/* fractions and figures */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.82em;line-height:1.12;margin:0 .12em}
+.fr span:first-child{border-bottom:.09em solid currentColor;padding:0 .2em}
+.fr span:last-child{padding:0 .2em}
+sup{font-size:.62em;line-height:0}
+.f-fill{fill:var(--accent)} .f-empty{fill:var(--surface)} .f-soft{fill:color-mix(in srgb,var(--accent) 20%,var(--surface))}
+.f-edge{stroke:var(--ink);stroke-width:2} .f-face{fill:var(--surface);stroke:var(--ink);stroke-width:3}
+.f-line{stroke:var(--ink);stroke-width:1.5} .f-hand{stroke:var(--ink);stroke-linecap:round} .f-ink{fill:var(--ink)}
+.f-text{fill:var(--ink);font-family:var(--font-body);font-weight:800;text-anchor:middle} .f-num{fill:var(--muted);font-family:var(--font-body);text-anchor:middle}
+.f-grid{stroke:var(--line);stroke-width:1} .f-axis{stroke:var(--ink);stroke-width:1.6}
+.f-plot{stroke:var(--accent);stroke-width:3;stroke-linecap:round} .f-pt{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+
+#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+.confirm{border:2px solid var(--bad);border-radius:14px;padding:12px 14px;background:var(--surface)}
+
+@media (max-width:560px){
+  body{font-size:16px}
+  .stop{grid-template-columns:auto minmax(0,1fr);width:100%}
+  .stop .btn{grid-column:1 / -1}
+  .opt,.tile{font-size:19px}
+  .panel{padding:16px}
+  .keys{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app" data-band="1">
+    <header class="top">
+      <button class="brand" id="homeBtn" type="button">Math <span>Trail</span></button>
+      <div class="top-right"><span class="total" id="total"></span><button class="ghost" id="soundBtn" type="button">Sound on</button></div>
+    </header>
+    <main id="view" class="stack" style="gap:20px"></main>
+    <canvas id="confetti" hidden></canvas>
+  </div>
+<script>
+/* Math Trail - core helpers: random numbers, question builders, figures.
+   No DOM here, so the same file runs in the browser and in Node (tools/make-exports.js). */
+(function () {
+  const MT = (globalThis.MT = globalThis.MT || {});
+  MT.grades = [];
+
+  // ---------- random helpers
+  const rnd = () => Math.random();
+  const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+  const pick = arr => arr[Math.floor(rnd() * arr.length)];
+  const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+  const distinct = (k, lo, hi) => shuffle(range(lo, hi)).slice(0, k);
+  const nz = (a, b) => { let v = 0; while (v === 0) v = ri(a, b); return v; };          // random non-zero integer
+  const rd = (x, p = 2) => +(+x).toFixed(p);
+  const gcd = (a, b) => (b ? gcd(b, a % b) : Math.abs(a));
+  const lcm = (a, b) => a * b / gcd(a, b);
+  const isPrime = n => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+  const fact = n => (n <= 1 ? 1 : n * fact(n - 1));
+
+  // ---------- text helpers.  {a/b} shows as a stacked fraction, ^ makes a superscript.
+  const fr = (n, d) => { const g = gcd(n, d) || 1; n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : (n < 0 ? '-' : '') + `{${Math.abs(n)}/${d}}`; };
+  const frs = (n, d) => { const g = gcd(n, d) || 1; n /= g; d /= g; if (d < 0) { n = -n; d = -d; } return d === 1 ? String(n) : `${n}/${d}`; };   // typed-answer form
+  const p = n => (n < 0 ? `(${n})` : String(n));                                        // negative numbers in brackets
+  const money = x => (Number.isInteger(x) ? String(x) : x.toFixed(2));
+  const poly = (cs, v = 'x') => {                                                       // coefficients, highest power first
+    const n = cs.length - 1; let out = '';
+    cs.forEach((c, i) => {
+      if (!c) return;
+      const pw = n - i, mag = Math.abs(c);
+      const body = pw === 0 ? String(mag) : (mag === 1 ? '' : mag) + v + (pw > 1 ? '^' + pw : '');
+      out += out ? (c < 0 ? ' - ' : ' + ') + body : (c < 0 ? '-' : '') + body;
+    });
+    return out || '0';
+  };
+  const lin = (a, b, v = 'x') => poly([a, b], v);
+  const mono = (c, pw, v = 'x') => (pw === 0 ? String(c) : poly([c, ...Array(pw).fill(0)], v));
+  const fac = r => (r === 0 ? 'x' : `(x ${r < 0 ? '-' : '+'} ${Math.abs(r)})`);         // fac(3) = (x + 3)
+  const facs = (...rs) => rs.slice().sort((a, b) => a - b).map(fac).join('');
+  const cx = (a, b) => (b === 0 ? String(a) : a === 0 ? (Math.abs(b) === 1 ? (b < 0 ? '-i' : 'i') : b + 'i') : `${a} ${b < 0 ? '-' : '+'} ${Math.abs(b) === 1 ? '' : Math.abs(b)}i`);
+
+  // ---------- question builders
+  function near(n, extra = []) {
+    const out = [], add = x => { x = rd(x, 4); if (x !== n && !out.includes(x) && (n < 0 || x >= 0)) out.push(x); };
+    extra.forEach(add);
+    const cand = Number.isInteger(n) ? [n + 1, n - 1, n + 2, n - 2, n + 10, n - 10, n + 3, n * 2, n + 5, n - 3, n + 4, n + 6]
+      : [n + 0.1, n - 0.1, n + 1, n - 1, n * 10, n / 10, n + 0.5, n + 0.2];
+    shuffle(cand).forEach(add);
+    return out;
+  }
+  function mc(q, ans, wrong, why, fig) {
+    ans = String(ans);
+    const opts = [ans];
+    for (const w of wrong.map(String)) { if (!opts.includes(w)) opts.push(w); if (opts.length === 4) break; }
+    if (opts.length < 4) throw new Error('not enough options for: ' + q);
+    const sh = shuffle(opts);
+    return { kind: 'choice', q, opts: sh, a: sh.indexOf(ans), why, fig };
+  }
+  const mcn = (q, n, why, extra, fig) => mc(q, String(n), near(n, extra || []), why, fig);
+  const num = (q, ans, why, fig) => ({ kind: 'input', q, a: ans, why, fig });
+  const tf = (q, truth, why) => ({ kind: 'tf', q, a: !!truth, why });
+  const cmp = (L, R, lv, rv, why) => ({ kind: 'compare', q: 'Which sign makes this true?', L, R, a: Math.abs(lv - rv) < 1e-9 ? '=' : lv < rv ? '<' : '>', why });
+  const ord = (q, items, why) => {
+    const sorted = items.slice().sort((a, b) => a.v - b.v);
+    return { kind: 'order', q, items: shuffle(items), why: why || `In order: ${sorted.map(i => i.t).join(',  ')}.` };
+  };
+  function matchOf(q, gen, why) {
+    const pairs = [], L = new Set(), R = new Set(); let guard = 0;
+    while (pairs.length < 4 && guard++ < 400) {
+      const [l, r] = gen(); const rs = String(r);
+      if (L.has(l) || R.has(rs)) continue;
+      L.add(l); R.add(rs); pairs.push([l, rs]);
+    }
+    if (pairs.length < 4) throw new Error('not enough pairs for: ' + q);
+    return { kind: 'match', q, pairs, why };
+  }
+  const pickAll = (q, tiles, why) => {
+    if (!tiles.some(t => t.ok) || tiles.every(t => t.ok)) throw new Error('bad tiles for: ' + q);
+    return { kind: 'pick', q, tiles: shuffle(tiles), why };
+  };
+  function pickFrom(q, pool, count, pred, why) {                                         // sample numbers, some fit the rule
+    for (let g = 0; g < 400; g++) {
+      const s = shuffle(pool).slice(0, count), k = s.filter(pred).length;
+      if (k >= 1 && k <= count - 1) return pickAll(q, s.map(v => ({ t: String(v), ok: !!pred(v) })), why);
+    }
+    throw new Error('pickFrom failed: ' + q);
+  }
+  const pickMix = (q, okPool, badPool, nOk, nBad, why) =>
+    pickAll(q, [...shuffle(okPool).slice(0, nOk).map(t => ({ t: String(t), ok: true })), ...shuffle(badPool).slice(0, nBad).map(t => ({ t: String(t), ok: false }))], why);
+  function target(T, maxTile) {                                                          // tap tiles that add up to T
+    const a = ri(1, T - 1), tiles = [a, T - a];
+    while (tiles.length < 5) tiles.push(ri(1, maxTile));
+    return { kind: 'target', q: `Tap numbers that add up to ${T}.`, tiles: shuffle(tiles), T, why: `One way: ${a} + ${T - a} = ${T}.` };
+  }
+
+  // ---------- figures (inline SVG, colors come from the page's CSS)
+  const svg = (w, h, body) => `<svg viewBox="0 0 ${w} ${h}" class="fig" style="max-width:${w * 1.4}px" role="img" aria-hidden="true">${body}</svg>`;
+  const figDots = (r, c) => {
+    let s = '';
+    for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) s += `<circle class="f-fill" cx="${13 + j * 24}" cy="${13 + i * 24}" r="8.5"/>`;
+    return svg(c * 24 + 2, r * 24 + 2, s);
+  };
+  const figClock = (h, m) => {
+    const pt = (deg, len) => { const t = deg * Math.PI / 180; return [(70 + len * Math.sin(t)).toFixed(1), (70 - len * Math.cos(t)).toFixed(1)]; };
+    let s = '<circle class="f-face" cx="70" cy="70" r="64"/>';
+    for (let i = 1; i <= 12; i++) { const [x, y] = pt(i * 30, 50); s += `<text class="f-text" x="${x}" y="${y}" dy=".36em" font-size="13">${i}</text>`; }
+    for (let i = 0; i < 60; i += 5) { const [x1, y1] = pt(i * 6, 60), [x2, y2] = pt(i * 6, 64); s += `<line class="f-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`; }
+    const [hx, hy] = pt((h % 12 + m / 60) * 30, 30), [mx, my] = pt(m * 6, 46);
+    s += `<line class="f-hand" x1="70" y1="70" x2="${hx}" y2="${hy}" stroke-width="5"/><line class="f-hand" x1="70" y1="70" x2="${mx}" y2="${my}" stroke-width="3"/><circle class="f-ink" cx="70" cy="70" r="4"/>`;
+    return svg(140, 140, s);
+  };
+  const figBar = (n, d) => {
+    const w = 220 / d; let s = '';
+    for (let i = 0; i < d; i++) s += `<rect class="${i < n ? 'f-fill' : 'f-empty'} f-edge" x="${(2 + i * w).toFixed(1)}" y="2" width="${w.toFixed(1)}" height="44"/>`;
+    return svg(224, 48, s);
+  };
+  const figRect = (w, h) => {
+    const k = Math.min(170 / w, 96 / h), W = w * k, H = h * k;
+    return svg(W + 40, H + 30, `<rect class="f-soft f-edge" x="4" y="4" width="${W.toFixed(1)}" height="${H.toFixed(1)}"/><text class="f-text" x="${(4 + W / 2).toFixed(1)}" y="${(H + 22).toFixed(1)}" font-size="15">${w}</text><text class="f-text" x="${(W + 20).toFixed(1)}" y="${(4 + H / 2).toFixed(1)}" dy=".36em" font-size="15">${h}</text>`);
+  };
+  // right triangle: bottom side "across", right side "up", sloped side "hyp"; theta sits at the left corner
+  const figTri = (up, across, hyp, theta) =>
+    svg(230, 150, `<polygon class="f-soft f-edge" points="24,118 190,118 190,24"/><polyline class="f-line" points="178,118 178,106 190,106" fill="none"/>` +
+      `<text class="f-text" x="107" y="140" font-size="15">${across}</text><text class="f-text" x="208" y="72" dy=".36em" font-size="15">${up}</text><text class="f-text" x="94" y="60" font-size="15">${hyp}</text>` +
+      (theta ? '<text class="f-text" x="56" y="112" font-size="14">θ</text>' : ''));
+  // coordinate grid from lo..hi with optional points and a line through two points
+  const figGrid = (pts, lo, hi, line) => {
+    const n = hi - lo, u = 200 / n, X = x => (10 + (x - lo) * u).toFixed(1), Y = y => (10 + (hi - y) * u).toFixed(1);
+    let s = '';
+    for (let i = lo; i <= hi; i++) s += `<line class="f-grid" x1="${X(i)}" y1="${Y(lo)}" x2="${X(i)}" y2="${Y(hi)}"/><line class="f-grid" x1="${X(lo)}" y1="${Y(i)}" x2="${X(hi)}" y2="${Y(i)}"/>`;
+    s += `<line class="f-axis" x1="${X(0)}" y1="${Y(lo)}" x2="${X(0)}" y2="${Y(hi)}"/><line class="f-axis" x1="${X(lo)}" y1="${Y(0)}" x2="${X(hi)}" y2="${Y(0)}"/>`;
+    for (let i = lo; i <= hi; i++) if (i !== 0 && (n <= 8 || i % 2 === 0)) s += `<text class="f-num" x="${X(i)}" y="${(+Y(0) + 11).toFixed(1)}" font-size="8">${i}</text><text class="f-num" x="${(+X(0) - 7).toFixed(1)}" y="${Y(i)}" dy=".36em" font-size="8">${i}</text>`;
+    if (line) {
+      const [[x1, y1], [x2, y2]] = line, m = (y2 - y1) / (x2 - x1), b = y1 - m * x1;
+      const clip = x => Math.max(lo, Math.min(hi, x));
+      let xa = lo, xb = hi;
+      if (m !== 0) { const c1 = (lo - b) / m, c2 = (hi - b) / m; xa = clip(Math.max(lo, Math.min(c1, c2))); xb = clip(Math.min(hi, Math.max(c1, c2))); }
+      s += `<line class="f-plot" x1="${X(xa)}" y1="${Y(m * xa + b)}" x2="${X(xb)}" y2="${Y(m * xb + b)}"/>`;
+    }
+    for (const [x, y] of pts) s += `<circle class="f-pt" cx="${X(x)}" cy="${Y(y)}" r="5"/>`;
+    return svg(220, 220, s);
+  };
+
+  Object.assign(MT, { rnd, ri, pick, shuffle, range, distinct, nz, rd, gcd, lcm, isPrime, fact, fr, frs, p, money, poly, lin, mono, fac, facs, cx,
+    near, mc, mcn, num, tf, cmp, ord, matchOf, pickAll, pickFrom, pickMix, target, figDots, figClock, figBar, figRect, figTri, figGrid });
+
+  // ---------- shared by the app and the export tool
+  // numeric value of a typed or stored answer: "3/4", "-2.5", 7
+  MT.value = s => { s = String(s).trim().replace(/−/g, '-'); if (/^-?\d*\.?\d+\/-?\d*\.?\d+$/.test(s)) { const [a, b] = s.split('/'); return +a / +b; } return /^-?\d*\.?\d+$/.test(s) ? +s : NaN; };
+  MT.showAnswer = a => (typeof a === 'string' && a.includes('/') ? `{${a}}` : String(a));
+  // build one round: n questions cycling through the section's puzzle makers, no repeated prompts
+  MT.round = (gens, n) => {
+    const out = [], seen = new Set(); let order = shuffle(gens), i = 0, guard = 0;
+    while (out.length < n && guard++ < 500) {
+      if (i >= order.length) { order = shuffle(gens); i = 0; }
+      const q = order[i++](), key = q.q + '|' + (q.L || '') + (q.R || '') + (q.fig ? q.fig.length : '') + (q.pairs ? q.pairs.join() : '') + (q.tiles ? q.tiles.map(t => t.t || t).join() : '');
+      if (seen.has(key)) continue;
+      seen.add(key); out.push(q);
+    }
+    return out;
+  };
+  MT.sectionId = (g, s) => `g${g}s${s}`;
+})();
+
+/* Math Trail - grades 1 to 4. Each section has a tip (the mini lesson) and a list of puzzle makers. */
+(function () {
+  const { rnd, ri, pick, shuffle, range, distinct, rd, lcm, isPrime, fr, mc, mcn, num, tf, cmp, ord, matchOf, pickFrom, pickMix, target,
+    figDots, figClock, figBar, figRect } = MT;
+  const clock = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
+  const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+  MT.grades.push({
+    grade: 1, title: 'Counting, adding and taking away', sections: [
+      { name: 'Count and order', tip: 'Numbers go up by one each time you count: 7, 8, 9, 10. A number that comes later when you count is bigger. Example: 12 comes after 9, so 12 is bigger than 9.', gens: [
+        () => { const n = ri(3, 98); return num(`What number comes right after ${n}?`, n + 1, `Count on one more: ${n}, then ${n + 1}.`); },
+        () => { const n = ri(4, 99); return mcn(`What number comes right before ${n}?`, n - 1, `Count back one: ${n}, then ${n - 1}.`); },
+        () => ord('Tap the numbers from smallest to biggest.', distinct(4, 1, 50).map(v => ({ t: String(v), v }))),
+        () => { const r = ri(2, 4), c = ri(3, 5); return num('How many dots are there?', r * c, `Count each row: ${r} rows of ${c} makes ${r * c}.`, figDots(r, c)); },
+      ] },
+      { name: 'Adding to 20', tip: 'Adding puts groups together. Start at the bigger number and count on. Example: 8 + 3. Start at 8 and count 9, 10, 11. So 8 + 3 = 11.', gens: [
+        () => { const a = ri(1, 10), b = ri(1, 10); return num(`${a} + ${b} = ?`, a + b, `Start at ${Math.max(a, b)} and count on ${Math.min(a, b)}: you land on ${a + b}.`); },
+        () => { const a = ri(1, 9), c = a + ri(1, 10); return mcn(`${a} + ☐ = ${c}`, c - a, `${a} + ${c - a} = ${c}.`); },
+        () => target(ri(8, 15), 9),
+        () => matchOf('Match each problem to its answer.', () => { const a = ri(1, 9), b = ri(1, 9); return [`${a} + ${b}`, a + b]; }, 'Count on from the bigger number to add.'),
+      ] },
+      { name: 'Taking away', tip: 'Subtracting takes some away. Start at the first number and count back. Example: 12 - 4. Count back 11, 10, 9, 8. So 12 - 4 = 8.', gens: [
+        () => { const a = ri(5, 20), b = ri(1, Math.min(a, 10)); return num(`${a} - ${b} = ?`, a - b, `Start at ${a} and count back ${b}: you land on ${a - b}.`); },
+        () => { const a = ri(6, 18), b = ri(1, a - 1), ok = rnd() < 0.5, c = ok ? a - b : a - b + pick([-1, 1, 2]); return tf(`${a} - ${b} = ${c}`, ok, `${a} - ${b} = ${a - b}.`); },
+        () => { const a = ri(6, 18), b = ri(1, a - 1); return mcn(`${a} - ☐ = ${a - b}`, b, `${a} - ${b} = ${a - b}.`); },
+        () => matchOf('Match each problem to its answer.', () => { const a = ri(5, 18), b = ri(1, a - 1); return [`${a} - ${b}`, a - b]; }, 'Count back to subtract.'),
+      ] },
+      { name: 'Bigger or smaller', tip: 'The sign < means "is less than" and > means "is greater than". The open side always faces the bigger number. Example: 15 < 21 and 30 > 9.', gens: [
+        () => { const a = ri(1, 99), b = rnd() < 0.15 ? a : ri(1, 99); return cmp(String(a), String(b), a, b, `${a} is ${a === b ? 'equal to' : a < b ? 'less than' : 'greater than'} ${b}.`); },
+        () => { const a = ri(1, 9), b = ri(1, 9), c = a + b + pick([-2, -1, 0, 1, 2]); return cmp(`${a} + ${b}`, String(c), a + b, c, `${a} + ${b} = ${a + b}.`); },
+        () => { const n = ri(20, 70); return pickFrom(`Tap every number that is greater than ${n}.`, range(5, 95), 6, v => v > n, `Numbers greater than ${n} come after ${n} when you count.`); },
+        () => ord('Tap the numbers from smallest to biggest.', distinct(4, 10, 99).map(v => ({ t: String(v), v }))),
+      ] },
+      { name: 'Tens and ones', tip: 'A two-digit number is made of tens and ones. Example: 47 is 4 tens and 7 ones. That is 40 + 7.', gens: [
+        () => { const t = ri(1, 9), o = ri(0, 9); return mcn(`${pl(t, 'ten')} and ${pl(o, 'one')} make what number?`, t * 10 + o, `${t} tens is ${t * 10}. Add ${o} ones to get ${t * 10 + o}.`, [o * 10 + t, t + o]); },
+        () => { const n = ri(11, 99); return num(`How many tens are in ${n}?`, Math.floor(n / 10), `${n} is ${Math.floor(n / 10)} tens and ${n % 10} ones.`); },
+        () => { const n = ri(11, 89), up = rnd() < 0.5, a = up ? n + 10 : n - 10; return mcn(`What is 10 ${up ? 'more' : 'less'} than ${n}?`, a, `Only the tens digit changes: ${a}.`, [up ? n + 1 : n - 1]); },
+        () => { const t = ri(1, 9), o = ri(1, 9), ok = rnd() < 0.5 || t === o; return tf(`${t * 10 + o} has ${pl(ok ? t : o, 'ten')} and ${pl(ok ? o : t, 'one')}.`, ok, `${t * 10 + o} has ${t} tens and ${o} ones.`); },
+      ] },
+    ],
+  });
+
+  MT.grades.push({
+    grade: 2, title: 'Bigger sums, patterns, time and money', sections: [
+      { name: 'Adding to 100', tip: 'Add the ones first, then the tens. If the ones make 10 or more, carry a ten. Example: 38 + 25. Ones: 8 + 5 = 13, write 3 and carry 1. Tens: 3 + 2 + 1 = 6. Answer: 63.', gens: [
+        () => { const a = ri(11, 59), b = ri(11, 99 - a); return num(`${a} + ${b} = ?`, a + b, `Ones: ${a % 10} + ${b % 10} = ${a % 10 + b % 10}. Then add the tens to get ${a + b}.`); },
+        () => { const a = ri(11, 60), c = a + ri(11, 39); return mcn(`${a} + ☐ = ${c}`, c - a, `${a} + ${c - a} = ${c}.`); },
+        () => { const a = ri(11, 49), b = ri(11, 49), ok = rnd() < 0.5, c = ok ? a + b : a + b + pick([-10, 10, 1, -1]); return tf(`${a} + ${b} = ${c}`, ok, `${a} + ${b} = ${a + b}.`); },
+        () => matchOf('Match each problem to its answer.', () => { const a = ri(11, 49), b = ri(11, 49); return [`${a} + ${b}`, a + b]; }, 'Add the ones, then the tens.'),
+      ] },
+      { name: 'Subtracting within 100', tip: 'Subtract the ones first, then the tens. If you cannot take the ones away, borrow a ten. Example: 52 - 27. Borrow: 12 - 7 = 5. Tens: 4 - 2 = 2. Answer: 25.', gens: [
+        () => { const a = ri(30, 99), b = ri(11, a - 5); return num(`${a} - ${b} = ?`, a - b, `Take away the tens and ones of ${b} from ${a}: ${a - b}.`); },
+        () => { const a = ri(40, 99), b = ri(11, a - 11); return mcn(`${a} - ☐ = ${a - b}`, b, `${a} - ${b} = ${a - b}.`); },
+        () => { const a = ri(30, 99), b = ri(11, a - 5), ok = rnd() < 0.5, c = ok ? a - b : a - b + pick([-10, 10, 2, -2]); return tf(`${a} - ${b} = ${c}`, ok, `${a} - ${b} = ${a - b}.`); },
+        () => { const a = ri(30, 99), b = ri(11, a - 5), c = a - b + pick([-3, 0, 0, 4]); return cmp(`${a} - ${b}`, String(c), a - b, c, `${a} - ${b} = ${a - b}.`); },
+      ] },
+      { name: 'Skip counting', tip: 'Skip counting jumps by the same amount each time. By 5s: 5, 10, 15, 20. By 10s: 10, 20, 30. Find the jump size, then keep jumping.', gens: [
+        () => { const k = pick([2, 5, 10, 3]), s = k * ri(1, 8); return mcn(`${s}, ${s + k}, ${s + 2 * k}, ☐`, s + 3 * k, `The pattern goes up by ${k} each time.`, [s + 2 * k + 1, s + 4 * k]); },
+        () => { const k = pick([2, 5, 10]); return pickFrom(`Tap every number you say when you count by ${k}s.`, range(k, k * 12), 6, v => v % k === 0, `Counting by ${k}s: ${k}, ${2 * k}, ${3 * k}, ${4 * k} ...`); },
+        () => { const k = pick([5, 10, 100]), s = k * ri(2, 9); return num(`Count back by ${k}s: ${s + 2 * k}, ${s + k}, ${s}, ?`, s - k, `Each step goes down by ${k}.`); },
+        () => { const k = pick([2, 3, 4, 5, 10]), n = ri(3, 9); return num(`You make ${n} jumps of ${k} on a number line, starting at 0. Where do you land?`, n * k, `Count by ${k}s, ${n} times: ${n * k}.`); },
+      ] },
+      { name: 'Even, odd and hundreds', tip: 'Even numbers end in 0, 2, 4, 6 or 8. Odd numbers end in 1, 3, 5, 7 or 9. A three-digit number has hundreds, tens and ones: 365 is 3 hundreds, 6 tens, 5 ones.', gens: [
+        () => pickFrom('Tap all the even numbers.', range(1, 60), 6, v => v % 2 === 0, 'Even numbers end in 0, 2, 4, 6 or 8.'),
+        () => { const n = ri(11, 99), says = pick(['even', 'odd']); return tf(`${n} is ${says}.`, (n % 2 === 0) === (says === 'even'), `${n} ends in ${n % 10}, so it is ${n % 2 ? 'odd' : 'even'}.`); },
+        () => { const h = ri(1, 9), t = ri(0, 9), o = ri(0, 9), n = h * 100 + t * 10 + o; return mcn(`${pl(h, 'hundred')}, ${pl(t, 'ten')} and ${pl(o, 'one')} make what number?`, n, `${h * 100} + ${t * 10} + ${o} = ${n}.`, [h * 100 + o * 10 + t, h + t + o]); },
+        () => { const a = ri(100, 999), b = rnd() < 0.3 ? Math.floor(a / 10) * 10 + ri(0, 9) : ri(100, 999); return cmp(String(a), String(b), a, b, 'Compare the hundreds first, then the tens, then the ones.'); },
+      ] },
+      { name: 'Time and money', tip: 'On a clock the short hand shows the hour and the long hand shows the minutes. Coins: a penny is 1 cent, a nickel 5, a dime 10 and a quarter 25.', gens: [
+        () => { const h = ri(1, 12), m = pick([0, 30, 15, 45]); return mc('What time does the clock show?', clock(h, m), [clock(h % 12 + 1, m), clock(h, (m + 30) % 60), clock(m / 5 || 12, h * 5 % 60), clock((h + 10) % 12 + 1, m), clock(h, (m + 15) % 60)], `The short hand shows the hour (${h}). The long hand shows the minutes (${String(m).padStart(2, '0')}).`, figClock(h, m)); },
+        () => { let q = ri(0, 2), d = ri(0, 4), n = ri(0, 3), pn = ri(0, 4); if (q + d + n === 0) d = 2; const parts = [[q, 'quarter'], [d, 'dime'], [n, 'nickel'], [pn, 'penny']].filter(x => x[0]).map(([c, w]) => `${c} ${c > 1 ? (w === 'penny' ? 'pennies' : w + 's') : w}`); const total = q * 25 + d * 10 + n * 5 + pn; return num(`How many cents is this? ${parts.join(', ')}`, total, `Quarters are 25, dimes 10, nickels 5, pennies 1. Total: ${total} cents.`); },
+        () => { const cost = ri(2, 9) * 5; return num(`A toy costs ${cost} cents. You pay with 50 cents. How many cents do you get back?`, 50 - cost, `50 - ${cost} = ${50 - cost}.`); },
+        () => { const h = ri(1, 11); return mc(`It is ${h}:00. What time will it be in 30 minutes?`, `${h}:30`, [`${h + 1}:00`, `${h}:15`, `${h + 1}:30`], 'Thirty minutes is half an hour, so the minutes become 30.'); },
+      ] },
+    ],
+  });
+
+  MT.grades.push({
+    grade: 3, title: 'Times tables, fractions and area', sections: [
+      { name: 'Multiplication', tip: 'Multiplying is adding equal groups. 4 × 3 means 4 groups of 3: 3 + 3 + 3 + 3 = 12. You can picture it as 4 rows with 3 in each row.', gens: [
+        () => { const a = ri(2, 10), b = ri(2, 10); return num(`${a} × ${b} = ?`, a * b, `${a} groups of ${b} make ${a * b}.`); },
+        () => { const r = ri(2, 6), c = ri(2, 9); return num('How many dots? Multiply the rows by the columns.', r * c, `${r} rows × ${c} in each row = ${r * c}.`, figDots(r, c)); },
+        () => { const a = ri(2, 9), b = ri(2, 9); return mcn(`${a} × ☐ = ${a * b}`, b, `${a} × ${b} = ${a * b}.`); },
+        () => matchOf('Match each problem to its answer.', () => { const a = ri(2, 9), b = ri(2, 9); return [`${a} × ${b}`, a * b]; }, 'Think of equal groups, or skip count.'),
+      ] },
+      { name: 'Division', tip: 'Dividing shares into equal groups. 12 ÷ 3 asks: how many in each group if 12 is shared by 3? It is the opposite of multiplying: 3 × 4 = 12, so 12 ÷ 3 = 4.', gens: [
+        () => { const a = ri(2, 10), b = ri(2, 10); return num(`${a * b} ÷ ${a} = ?`, b, `${a} × ${b} = ${a * b}, so ${a * b} ÷ ${a} = ${b}.`); },
+        () => { const a = ri(2, 9), b = ri(2, 9), ok = rnd() < 0.5, c = ok ? b : b + pick([-1, 1]); return tf(`${a * b} ÷ ${a} = ${c}`, ok, `${a} × ${b} = ${a * b}, so the answer is ${b}.`); },
+        () => { const b = ri(2, 9), c = ri(2, 9); return mcn(`☐ ÷ ${b} = ${c}`, b * c, `${b} × ${c} = ${b * c}.`, [b + c]); },
+        () => { const k = ri(2, 6), each = ri(2, 9); return num(`${k * each} cookies are shared equally by ${k} friends. How many does each friend get?`, each, `${k * each} ÷ ${k} = ${each}.`); },
+      ] },
+      { name: 'Fractions', tip: 'A fraction names equal parts of a whole. The bottom number says how many equal parts there are. The top number says how many parts you have. {3/4} means 3 of 4 equal parts.', gens: [
+        () => { const d = ri(2, 8), n = ri(1, d - 1); return mc('What fraction of the bar is shaded?', `{${n}/${d}}`, [`{${d - n}/${d}}`, `{${n}/${d + 1}}`, `{${d}/${n}}`, `{${n + 1}/${d}}`, `{${n}/${d + 2}}`], `${n} of the ${d} equal parts are shaded.`, figBar(n, d)); },
+        () => { const d = ri(3, 10), a = ri(1, d - 1), b = ri(1, d - 1); return cmp(`{${a}/${d}}`, `{${b}/${d}}`, a, b, `The pieces are the same size, so compare the top numbers: ${a} and ${b}.`); },
+        () => { const n = ri(1, 3), a = ri(4, 9), b = ri(4, 9); return cmp(`{${n}/${a}}`, `{${n}/${b}}`, n / a, n / b, 'Same number of pieces. The pieces are bigger when the bottom number is smaller.'); },
+        () => pickMix('Tap every fraction that equals {1/2}.', ['{2/4}', '{3/6}', '{4/8}', '{5/10}'], ['{1/3}', '{2/5}', '{3/4}', '{2/6}', '{3/8}', '{4/6}', '{1/4}'], ri(2, 3), 3, 'A fraction equals {1/2} when the top is half of the bottom.'),
+        () => { const d = ri(2, 8); return num(`How many {1/${d}} pieces make one whole?`, d, `${d} pieces of {1/${d}} make {${d}/${d}}, which is 1 whole.`); },
+      ] },
+      { name: 'Area and perimeter', tip: 'Perimeter is the distance around a shape: add all the sides. Area is the space inside: for a rectangle, multiply length × width. A 5 by 3 rectangle has perimeter 16 and area 15.', gens: [
+        () => { const w = ri(2, 9), h = ri(2, 7); return num('What is the area of this rectangle, in square units?', w * h, `Area = length × width = ${w} × ${h} = ${w * h}.`, figRect(w, h)); },
+        () => { const w = ri(2, 9), h = ri(2, 7); return num('What is the perimeter of this rectangle?', 2 * (w + h), `Add all four sides: ${w} + ${h} + ${w} + ${h} = ${2 * (w + h)}.`, figRect(w, h)); },
+        () => { const w = ri(2, 9), h = ri(2, 9); return mcn(`A rectangle has an area of ${w * h} square units. One side is ${w} units long. How long is the other side?`, h, `${w} × ${h} = ${w * h}.`, [w * h - w]); },
+        () => { const s = ri(2, 12); return num(`A square has sides ${s} units long. What is its perimeter?`, 4 * s, `A square has 4 equal sides: 4 × ${s} = ${4 * s}.`); },
+      ] },
+      { name: 'Rounding', tip: 'To round to the nearest ten, look at the ones digit. 5 or more rounds up, 4 or less rounds down. 47 rounds to 50. 43 rounds to 40. For hundreds, look at the tens digit.', gens: [
+        () => { let n = ri(11, 989); if (n % 10 === 0) n += 3; const a = Math.round(n / 10) * 10; return mcn(`Round ${n} to the nearest ten.`, a, `The ones digit is ${n % 10}, so round ${n % 10 >= 5 ? 'up' : 'down'} to ${a}.`, [Math.floor(n / 10) * 10, Math.ceil(n / 10) * 10]); },
+        () => { let n = ri(101, 949); if (n % 100 === 0) n += 37; const a = Math.round(n / 100) * 100; return num(`Round ${n} to the nearest hundred.`, a, `The tens digit is ${Math.floor(n / 10) % 10}, so round ${n % 100 >= 50 ? 'up' : 'down'} to ${a}.`); },
+        () => { const T = 10 * ri(2, 9); return pickFrom(`Tap every number that rounds to ${T} (nearest ten).`, range(T - 9, T + 9).filter(v => v !== T), 6, v => Math.round(v / 10) * 10 === T, `Numbers from ${T - 5} to ${T + 4} round to ${T}.`); },
+        () => { let n = ri(11, 98); if (n % 10 === 0) n += 4; const a = Math.round(n / 10) * 10, ok = rnd() < 0.5; return tf(`${n} rounded to the nearest ten is ${ok ? a : (a > n ? a - 10 : a + 10)}.`, ok, `${n} rounds to ${a}.`); },
+      ] },
+    ],
+  });
+
+  const FRACS = [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [1, 6], [5, 6], [1, 8], [3, 8], [5, 8], [7, 8]];
+  MT.grades.push({
+    grade: 4, title: 'Big multiplication, factors and decimals', sections: [
+      { name: 'Bigger multiplication', tip: 'Break a big number into tens and ones, multiply each part, then add. Example: 34 × 6 = (30 × 6) + (4 × 6) = 180 + 24 = 204.', gens: [
+        () => { const a = ri(12, 99), b = ri(2, 9), t = Math.floor(a / 10) * 10, o = a % 10; return num(`${a} × ${b} = ?`, a * b, `${t} × ${b} = ${t * b} and ${o} × ${b} = ${o * b}. Add them: ${a * b}.`); },
+        () => { const a = ri(11, 30), b = ri(11, 30), t = Math.floor(b / 10) * 10, o = b % 10; return mcn(`${a} × ${b} = ?`, a * b, `${a} × ${t} = ${a * t} and ${a} × ${o} = ${a * o}. Add them: ${a * b}.`, [a * t + o, a * b + a]); },
+        () => { const a = ri(12, 99), k = pick([10, 100, 1000]); return num(`${a} × ${k} = ?`, a * k, `Multiplying by ${k} shifts the digits ${String(k).length - 1} place${k > 10 ? 's' : ''} to the left.`); },
+        () => { const a = ri(12, 49), b = ri(3, 9), ok = rnd() < 0.5, c = ok ? a * b : a * b + pick([-b, b, 10, -10]); return tf(`${a} × ${b} = ${c}`, ok, `${a} × ${b} = ${a * b}.`); },
+      ] },
+      { name: 'Division with remainders', tip: 'Sometimes a number does not divide evenly. What is left over is the remainder. 17 ÷ 5: five goes in 3 times (15), with 2 left over. Write 3 R2.', gens: [
+        () => { const d = ri(3, 9), q = ri(3, 12), r = ri(1, d - 1), n = d * q + r; return mc(`${n} ÷ ${d} = ?`, `${q} R${r}`, [`${q + 1} R${r}`, `${q - 1} R${r}`, `${q} R${r % (d - 1) + 1}`, `${r} R${q}`, `${q + 1} R0`], `${d} × ${q} = ${d * q}, and ${n} - ${d * q} = ${r} left over.`); },
+        () => { const d = ri(2, 9), q = ri(12, 120); return num(`${d * q} ÷ ${d} = ?`, q, `${d} × ${q} = ${d * q}.`); },
+        () => { const d = ri(3, 9), q = ri(3, 12), r = ri(1, d - 1), n = d * q + r; return num(`What is the remainder when ${n} is divided by ${d}?`, r, `${d} × ${q} = ${d * q}. ${n} - ${d * q} = ${r}.`); },
+        () => { const d = ri(4, 12), q = ri(4, 15), r = ri(1, d - 1); return num(`${d * q + r} pencils are packed ${d} to a box. How many full boxes are there?`, q, `${d} × ${q} = ${d * q}, with ${r} pencils left over.`); },
+      ] },
+      { name: 'Factors, multiples and primes', tip: 'A factor divides a number evenly: the factors of 12 are 1, 2, 3, 4, 6, 12. A multiple is what you get by skip counting: 3, 6, 9, 12. A prime has only two factors, 1 and itself.', gens: [
+        () => { const n = pick([12, 16, 18, 20, 24, 28, 30, 36, 40, 42, 48]); return pickFrom(`Tap every factor of ${n}.`, range(2, 12), 6, v => n % v === 0, `A factor divides ${n} with nothing left over.`); },
+        () => pickFrom('Tap every prime number.', range(2, 40), 6, isPrime, 'A prime has exactly two factors: 1 and itself.'),
+        () => { const k = ri(3, 9); return pickFrom(`Tap every multiple of ${k}.`, range(k + 1, k * 10), 6, v => v % k === 0, `Multiples of ${k}: ${k}, ${2 * k}, ${3 * k}, ${4 * k} ...`); },
+        () => { const n = ri(11, 60), says = rnd() < 0.5; return tf(`${n} is ${says ? '' : 'not '}a prime number.`, isPrime(n) === says, isPrime(n) ? `${n} has no factors other than 1 and ${n}.` : `${n} = ${range(2, n).find(v => n % v === 0)} × ${n / range(2, n).find(v => n % v === 0)}, so it is not prime.`); },
+        () => { const [a, b] = pick([[4, 6], [3, 5], [6, 8], [2, 7], [6, 9], [4, 10], [3, 4], [5, 6], [8, 12]]); return mcn(`What is the least common multiple of ${a} and ${b}?`, lcm(a, b), `It is the first number in both lists of multiples: ${lcm(a, b)}.`, [a * b === lcm(a, b) ? a + b : a * b, Math.max(a, b)]); },
+      ] },
+      { name: 'Equivalent fractions', tip: 'Multiply or divide the top and bottom by the same number and the fraction keeps its value. {1/2} = {2/4} = {3/6}. To compare fractions, give them the same bottom number first.', gens: [
+        () => { const [n, d] = pick([[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [2, 5], [3, 5]]), k = ri(2, 5); return mc(`Which fraction is equal to {${n}/${d}}?`, `{${n * k}/${d * k}}`, [`{${n * k}/${d * k + 1}}`, `{${n + k}/${d + k}}`, `{${n * k + 1}/${d * k}}`, `{${d * k}/${n * k}}`], `Multiply top and bottom by ${k}: {${n * k}/${d * k}}.`); },
+        () => { const [[a, b], [c, d]] = shuffle(FRACS).slice(0, 2); return cmp(`{${a}/${b}}`, `{${c}/${d}}`, a / b, c / d, `Cross-multiply: ${a} × ${d} = ${a * d} and ${c} × ${b} = ${c * b}.`); },
+        () => { const [n, d] = pick(FRACS), k = ri(2, 6); return num(`{${n}/${d}} = {☐/${d * k}}   What number goes in the box?`, n * k, `The bottom was multiplied by ${k}, so multiply the top by ${k}: ${n * k}.`); },
+        () => { const out = []; for (const f of shuffle(FRACS)) { if (out.length < 4 && !out.some(g => Math.abs(g[0] / g[1] - f[0] / f[1]) < 1e-9)) out.push(f); } return ord('Tap the fractions from smallest to biggest.', out.map(([n, d]) => ({ t: `{${n}/${d}}`, v: n / d }))); },
+      ] },
+      { name: 'Decimals', tip: 'Decimals are another way to write fractions with 10 or 100 on the bottom. 0.7 = {7/10} and 0.25 = {25/100}. Line up the decimal points to compare or add.', gens: [
+        () => { const a = ri(1, 99) / 10, b = rnd() < 0.5 ? ri(1, 999) / 100 : ri(1, 99) / 10; return cmp(String(a), String(b), a, b, 'Compare the whole numbers first, then tenths, then hundredths.'); },
+        () => ord('Tap the decimals from smallest to biggest.', distinct(4, 1, 99).map(v => v / (rnd() < 0.5 ? 10 : 100)).filter((v, i, a) => a.indexOf(v) === i).map(v => ({ t: String(v), v }))),
+        () => { const d = pick([10, 100]), n = ri(1, d - 1), a = rd(n / d, 2); return mc(`Which decimal equals {${n}/${d}}?`, String(a), [String(rd(n / d / 10, 3)), String(rd(n / d * 10, 2)), String(n), String(rd(a + 0.1, 2)), String(rd(a + 0.01, 2))], `{${n}/${d}} means ${n} ${d === 10 ? 'tenths' : 'hundredths'}: ${a}.`); },
+        () => { const a = ri(11, 89) / 10, b = ri(11, 89) / 10; return num(`${a} + ${b} = ?`, rd(a + b, 1), `Line up the decimal points and add: ${rd(a + b, 1)}.`); },
+      ] },
+    ],
+  });
+})();
+
+/* Math Trail - grades 5 to 8. */
+(function () {
+  const { rnd, ri, pick, shuffle, range, distinct, nz, rd, gcd, lcm, fr, frs, p, money, lin, mc, mcn, num, tf, cmp, ord, matchOf, pickAll, pickFrom, pickMix,
+    figTri, figGrid } = MT;
+
+  // two fractions with different bottoms
+  const twoFr = () => { const b = pick([2, 3, 4, 5, 6]), d = pick([2, 3, 4, 5, 6, 8].filter(x => x !== b)); return [ri(1, b - 1), b, ri(1, d - 1), d]; };
+
+  MT.grades.push({
+    grade: 5, title: 'Fractions, decimals and order of operations', sections: [
+      { name: 'Adding and subtracting fractions', tip: 'Fractions need the same bottom number before you add or subtract. {1/2} + {1/3}: use sixths. {3/6} + {2/6} = {5/6}. Then simplify if you can.', gens: [
+        () => { const [a, b, c, d] = twoFr(), n = a * d + c * b, den = b * d; return mc(`{${a}/${b}} + {${c}/${d}} = ?`, fr(n, den), [fr(a + c, b + d), fr(n + 1, den), fr(n, den + 1), fr(n - 1, den), fr(n + 2, den)], `Use ${den} as the bottom number: {${a * d}/${den}} + {${c * b}/${den}} = {${n}/${den}}${fr(n, den) !== `{${n}/${den}}` ? ' = ' + fr(n, den) : ''}.`); },
+        () => { let [a, b, c, d] = twoFr(); if (a / b < c / d) [a, b, c, d] = [c, d, a, b]; const n = a * d - c * b, den = b * d; return mc(`{${a}/${b}} - {${c}/${d}} = ?`, fr(n, den), [fr(Math.abs(a - c) || 1, Math.abs(b - d) || 1), fr(n + 1, den), fr(n, den + 1), fr(n + 2, den), fr(n + 3, den)], `Use ${den} as the bottom number: {${a * d}/${den}} - {${c * b}/${den}} = {${n}/${den}}${fr(n, den) !== `{${n}/${den}}` ? ' = ' + fr(n, den) : ''}.`); },
+        () => { const d = ri(5, 12), a = ri(1, d - 2), c = ri(1, d - 1 - a); return num(`{${a}/${d}} + {${c}/${d}} = ?   Type it like 3/4.`, frs(a + c, d), `The bottoms match, so add the tops: {${a + c}/${d}}${frs(a + c, d) !== `${a + c}/${d}` ? ' = ' + fr(a + c, d) : ''}.`); },
+        () => { const b = pick([2, 3, 4, 6]), d = pick([3, 4, 5, 6, 8, 10].filter(x => x !== b)); return mcn(`What is the smallest common bottom number (denominator) for {1/${b}} and {1/${d}}?`, lcm(b, d), `It is the first number that both ${b} and ${d} divide into: ${lcm(b, d)}.`, [b * d === lcm(b, d) ? b + d : b * d, Math.max(b, d)]); },
+      ] },
+      { name: 'Multiplying fractions', tip: 'Multiply the tops, multiply the bottoms, then simplify. {2/3} × {3/4} = {6/12} = {1/2}. "Of" means multiply: {3/4} of 20 is 15.', gens: [
+        () => { const [a, b, c, d] = twoFr(); return mc(`{${a}/${b}} × {${c}/${d}} = ?`, fr(a * c, b * d), [fr(a * d, b * c), fr(a + c, b + d), fr(a * c, b + d), fr(a * c + 1, b * d), fr(a * c, b * d + 1)], `Tops: ${a} × ${c} = ${a * c}. Bottoms: ${b} × ${d} = ${b * d}. Simplified: ${fr(a * c, b * d)}.`); },
+        () => { const d = ri(2, 8), n = ri(1, d - 1), k = ri(2, 9); return num(`What is {${n}/${d}} of ${d * k}?`, n * k, `${d * k} ÷ ${d} = ${k}, then ${k} × ${n} = ${n * k}.`); },
+        () => { const d = ri(2, 9), ok = rnd() < 0.5; return tf(`{1/2} of {1/${d}} is {1/${ok ? 2 * d : d + 2}}.`, ok, `{1/2} × {1/${d}} = {1/${2 * d}}.`); },
+        () => { const d = ri(3, 9), n = ri(1, d - 1), k = ri(2, 6); return num(`${k} × {${n}/${d}} = ?   Type it like 3/4.`, frs(k * n, d), `${k} × ${n} = ${k * n}, so the answer is {${k * n}/${d}}${frs(k * n, d) !== `${k * n}/${d}` ? ' = ' + fr(k * n, d) : ''}.`); },
+      ] },
+      { name: 'Decimal operations', tip: 'To add or subtract decimals, line up the decimal points. To multiply by 10, 100 or 1000, move the decimal point right. To divide, move it left. 3.4 × 10 = 34.', gens: [
+        () => { const a = ri(101, 999) / 100, b = ri(101, 999) / 100; return num(`${a} + ${b} = ?`, rd(a + b), `Line up the decimal points and add: ${rd(a + b)}.`); },
+        () => { const a = ri(501, 999) / 100, b = ri(101, 499) / 100; return num(`${a} - ${b} = ?`, rd(a - b), `Line up the decimal points and subtract: ${rd(a - b)}.`); },
+        () => { const a = ri(11, 99) / 10, k = ri(2, 9); return num(`${a} × ${k} = ?`, rd(a * k, 1), `${a * 10} × ${k} = ${rd(a * 10 * k, 0)}, then put the decimal point back: ${rd(a * k, 1)}.`); },
+        () => { const a = ri(11, 999) / 100, k = pick([10, 100, 0.1]); return mc(`${a} × ${k} = ?`, String(rd(a * k, 4)), [String(rd(a * k * 10, 4)), String(rd(a * k / 10, 4)), String(rd(a * k * 100, 4)), String(rd(a + k, 4))], k > 1 ? `Move the decimal point ${k === 10 ? 'one place' : 'two places'} to the right.` : 'Multiplying by 0.1 moves the decimal point one place to the left.'); },
+      ] },
+      { name: 'Order of operations', tip: 'Work in this order: brackets first, then powers, then multiply and divide, then add and subtract. 3 + 4 × 2 = 3 + 8 = 11, but (3 + 4) × 2 = 14.', gens: [
+        () => { const a = ri(2, 9), b = ri(2, 9), c = ri(2, 9); return num(`${a} + ${b} × ${c} = ?`, a + b * c, `Multiply first: ${b} × ${c} = ${b * c}. Then add ${a}: ${a + b * c}.`); },
+        () => { const a = ri(2, 9), b = ri(2, 9), c = ri(2, 9); return num(`(${a} + ${b}) × ${c} = ?`, (a + b) * c, `Brackets first: ${a} + ${b} = ${a + b}. Then × ${c}: ${(a + b) * c}.`); },
+        () => { const a = ri(4, 9), b = ri(4, 9), c = ri(2, 3), d = ri(2, 5); return num(`${a} × ${b} - ${c} × ${d} = ?`, a * b - c * d, `Do both multiplications first: ${a * b} - ${c * d} = ${a * b - c * d}.`); },
+        () => { const a = ri(2, 20), b = ri(2, 6); return num(`${a} + ${b}^2 = ?`, a + b * b, `The power comes first: ${b}^2 = ${b * b}. Then add ${a}: ${a + b * b}.`); },
+        () => { const a = ri(2, 9), b = ri(2, 9), c = ri(2, 9), ok = rnd() < 0.5; return tf(`${a} + ${b} × ${c} = ${ok ? a + b * c : (a + b) * c}`, ok, `Multiply before adding: ${a} + ${b * c} = ${a + b * c}.`); },
+      ] },
+      { name: 'Volume and coordinates', tip: 'Volume of a box = length × width × height. On a grid, a point is written (x, y): go across x first, then up y. (3, 2) is 3 across and 2 up.', gens: [
+        () => { const l = ri(2, 9), w = ri(2, 6), h = ri(2, 6); return num(`A box is ${l} long, ${w} wide and ${h} tall. What is its volume in cubic units?`, l * w * h, `${l} × ${w} × ${h} = ${l * w * h}.`); },
+        () => { const x = ri(1, 5), y = ri(1, 5); return mc('What are the coordinates of the point?', `(${x}, ${y})`, [`(${y}, ${x})`, `(${x + 1}, ${y})`, `(${x}, ${y + 1})`, `(${x - 1}, ${y})`, `(${x}, ${y - 1})`], `Go across ${x}, then up ${y}. Across always comes first.`, figGrid([[x, y]], 0, 6)); },
+        () => { const l = ri(2, 9), w = ri(2, 6), h = ri(2, 6); return mcn(`A box has a volume of ${l * w * h} cubic units. It is ${l} long and ${w} wide. How tall is it?`, h, `${l} × ${w} = ${l * w}, and ${l * w * h} ÷ ${l * w} = ${h}.`); },
+        () => { const s = ri(2, 6); return num(`How many unit cubes fill a cube with sides of ${s}?`, s ** 3, `${s} × ${s} × ${s} = ${s ** 3}.`); },
+      ] },
+    ],
+  });
+
+  const meanSet = () => { for (;;) { const n = pick([4, 5]), m = ri(5, 20), xs = Array.from({ length: n - 1 }, () => ri(m - 4, m + 4)), last = m * n - xs.reduce((a, b) => a + b, 0); if (last > 0 && last < 40) return { xs: shuffle([...xs, last]), m }; } };
+  MT.grades.push({
+    grade: 6, title: 'Ratios, percents, negatives and equations', sections: [
+      { name: 'Ratios and rates', tip: 'A ratio compares two amounts, like 2 to 3 (2:3). Multiply both parts by the same number to get an equal ratio: 2:3 = 4:6. A unit rate is the amount for 1: $6 for 3 is $2 each.', gens: [
+        () => { const k = ri(2, 8), c = pick([2, 3, 4, 5, 1.5, 2.5]); return num(`${k} notebooks cost $${money(k * c)}. How much does 1 notebook cost, in dollars?`, c, `Divide the cost by the number of notebooks: ${money(k * c)} ÷ ${k} = ${c}.`); },
+        () => { const a = ri(1, 5), b = ri(a + 1, 8), k = ri(2, 6); return mcn(`${a}:${b} = ☐:${b * k}`, a * k, `${b} was multiplied by ${k}, so multiply ${a} by ${k}: ${a * k}.`, [a + b * k - b, a * b]); },
+        () => { const [a, b] = pick([[1, 2], [2, 3], [3, 4], [2, 5], [3, 5], [1, 4]]); const ks = shuffle([2, 3, 4, 5]); return pickAll(`Tap every ratio equal to ${a}:${b}.`, [...ks.slice(0, ri(2, 3)).map(k => ({ t: `${a * k}:${b * k}`, ok: true })), { t: `${b * 2}:${a * 2}`, ok: false }, { t: `${a + 2}:${b + 2}`, ok: false }, { t: `${a * 3}:${b * 3 + 1}`, ok: false }], 'Equal ratios come from multiplying both parts by the same number.'); },
+        () => { const s = ri(20, 65), t = ri(2, 6); return num(`A car goes ${s * t} miles in ${t} hours. What is its speed in miles per hour?`, s, `${s * t} ÷ ${t} = ${s} miles each hour.`); },
+      ] },
+      { name: 'Percents', tip: 'Percent means "out of 100". 25% = {25/100} = {1/4}. To find a percent of a number, turn it into a fraction or decimal and multiply: 25% of 80 = 80 ÷ 4 = 20.', gens: [
+        () => { const pc = pick([5, 10, 20, 25, 50, 75]), n = 20 * ri(1, 10); return num(`What is ${pc}% of ${n}?`, pc * n / 100, `${pc}% = {${pc}/100}. ${n} × ${pc} ÷ 100 = ${pc * n / 100}.`); },
+        () => matchOf('Match each fraction to its percent.', () => pick([['{1/2}', '50%'], ['{1/4}', '25%'], ['{3/4}', '75%'], ['{1/5}', '20%'], ['{1/10}', '10%'], ['{2/5}', '40%'], ['{3/5}', '60%'], ['{1/20}', '5%'], ['{4/5}', '80%']]), 'Change the bottom number to 100, or divide top by bottom and multiply by 100.'),
+        () => { const pc = pick([10, 20, 25, 40, 50, 60, 75, 80]), b = pick([20, 40, 60, 80, 200]); return num(`${pc * b / 100} is what percent of ${b}?`, pc, `${pc * b / 100} ÷ ${b} = ${pc / 100}, which is ${pc}%.`); },
+        () => { const d = pick([0.07, 0.35, 0.6, 1.2, 0.09, 0.45, 0.8]), v = rd(d * 100, 0); return mc(`Write ${d} as a percent.`, `${v}%`, [`${rd(d * 10, 1)}%`, `${d}%`, `${v * 10}%`], `Multiply by 100: ${d} × 100 = ${v}%.`); },
+      ] },
+      { name: 'Negative numbers', tip: 'Numbers below zero are negative. On a number line, adding moves right and subtracting moves left. Subtracting a negative is the same as adding: 5 - (-3) = 5 + 3 = 8.', gens: [
+        () => { const a = ri(-12, 12), b = ri(-12, -1); return num(`${a} + ${p(b)} = ?`, a + b, `Adding a negative moves left on the number line: ${a + b}.`); },
+        () => { const a = ri(-10, 10), b = ri(-10, 10); return num(`${a} - ${p(b)} = ?`, a - b, b < 0 ? `Subtracting a negative is adding: ${a} + ${-b} = ${a - b}.` : `Move ${b} to the left of ${a}: ${a - b}.`); },
+        () => { const a = ri(-20, 20), b = rnd() < 0.15 ? a : ri(-20, 20); return cmp(String(a), String(b), a, b, 'The number further right on the number line is greater. -3 is greater than -8.'); },
+        () => ord('Tap the numbers from smallest to biggest.', distinct(4, -20, 20).map(v => ({ t: String(v), v }))),
+        () => { const a = ri(2, 12), b = ri(2, 9), ok = rnd() < 0.5; return tf(`${a} - (-${b}) = ${ok ? a + b : a - b}`, ok, `Subtracting a negative is adding: ${a} + ${b} = ${a + b}.`); },
+      ] },
+      { name: 'Expressions and equations', tip: 'A letter stands for a number. To solve an equation, undo what was done to x, on both sides. x + 7 = 15: subtract 7 from both sides, so x = 8.', gens: [
+        () => { const x = ri(2, 9), a = ri(2, 9), b = ri(1, 12); return num(`If x = ${x}, what is ${a}x + ${b}?`, a * x + b, `${a} × ${x} = ${a * x}, then add ${b}: ${a * x + b}.`); },
+        () => { const x = ri(2, 30), a = ri(2, 20); return num(`Solve: x + ${a} = ${a + x}`, x, `Subtract ${a} from both sides: x = ${x}.`); },
+        () => { const x = ri(2, 12), a = ri(2, 12); return num(`Solve: ${a}x = ${a * x}`, x, `Divide both sides by ${a}: x = ${x}.`); },
+        () => { const a = ri(2, 15), x = a + ri(1, 20); return num(`Solve: x - ${a} = ${x - a}`, x, `Add ${a} to both sides: x = ${x}.`); },
+        () => { const [a, b] = distinct(2, 2, 9); return mc(`Which expression means "${a} more than ${b} times a number n"?`, `${b}n + ${a}`, [`${a}n + ${b}`, `${a + b}n`, `${b}(n + ${a})`], `"${b} times a number" is ${b}n. "${a} more" adds ${a}.`); },
+      ] },
+      { name: 'Area and data', tip: 'Area of a triangle = {1/2} × base × height. The mean is the total divided by how many numbers there are. The median is the middle number when they are in order.', gens: [
+        () => { const b = 2 * ri(2, 10), h = ri(3, 12); return num(`A triangle has a base of ${b} and a height of ${h}. What is its area?`, b * h / 2, `{1/2} × ${b} × ${h} = ${b * h / 2}.`); },
+        () => { const { xs, m } = meanSet(); return num(`What is the mean (average) of ${xs.join(', ')}?`, m, `The total is ${m * xs.length}. Divide by ${xs.length}: ${m}.`); },
+        () => { const xs = distinct(5, 1, 40), s = xs.slice().sort((a, b) => a - b); return num(`What is the median of ${xs.join(', ')}?`, s[2], `In order: ${s.join(', ')}. The middle one is ${s[2]}.`); },
+        () => { const xs = distinct(5, 1, 60), hi = Math.max(...xs), lo = Math.min(...xs); return mcn(`What is the range of ${xs.join(', ')}?`, hi - lo, `Biggest minus smallest: ${hi} - ${lo} = ${hi - lo}.`, [hi, hi + lo]); },
+      ] },
+    ],
+  });
+
+  const SIGN_FACTS = [['A negative times a negative is positive.', true], ['A negative times a positive is negative.', true], ['A negative divided by a negative is negative.', false], ['A positive times a negative is positive.', false], ['The product of three negative numbers is negative.', true], ['Zero times a negative number is negative.', false]];
+  const PCT_FACTS = [['50% off, then another 50% off, makes an item free.', false, 'The second 50% is taken from the lower price, so you still pay 25%.'], ['A 100% increase doubles a number.', true, 'Adding 100% of a number to itself doubles it.'], ['To find a 20% tip you can find 10% and double it.', true, '20% is twice 10%.'], ['A 10% increase followed by a 10% decrease gets you back to the start.', false, 'The decrease is taken from the bigger number, so you end up a little lower.'], ['25% of a number is the same as dividing it by 4.', true, '25% = {1/4}.'], ['Sales tax makes the total smaller.', false, 'Tax is added to the price.']];
+  MT.grades.push({
+    grade: 7, title: 'Signed numbers, proportions and two-step equations', sections: [
+      { name: 'Multiplying signed numbers', tip: 'Same signs give a positive answer, different signs give a negative answer. (-3) × (-4) = 12 and (-3) × 4 = -12. The same rule works for division.', gens: [
+        () => { const a = nz(-9, 9), b = ri(-9, -2); return num(`${p(a)} × ${p(b)} = ?`, a * b, `${Math.abs(a)} × ${Math.abs(b)} = ${Math.abs(a * b)}. The signs are ${a * b > 0 ? 'the same, so the answer is positive' : 'different, so the answer is negative'}.`); },
+        () => { const a = nz(-9, 9), b = nz(-9, 9); return num(`${a * b} ÷ ${p(b)} = ?`, a, `${Math.abs(a * b)} ÷ ${Math.abs(b)} = ${Math.abs(a)}. The signs are ${a > 0 ? 'the same, so the answer is positive' : 'different, so the answer is negative'}.`); },
+        () => { const a = nz(-6, 6), b = ri(-6, -2), c = ri(1, 15); return num(`${p(a)} × ${p(b)} + ${c} = ?`, a * b + c, `Multiply first: ${a * b}. Then add ${c}: ${a * b + c}.`); },
+        () => { const [s, t] = pick(SIGN_FACTS); return tf(s, t, 'Same signs give a positive, different signs give a negative.'); },
+        () => { const a = nz(-6, 6), b = nz(-6, 6), c = a * b + pick([-5, 0, 0, 5]); return cmp(`${p(a)} × ${p(b)}`, String(c), a * b, c, `${p(a)} × ${p(b)} = ${a * b}.`); },
+      ] },
+      { name: 'Proportions', tip: 'A proportion says two ratios are equal. To solve {3/4} = {x/20}, see that 4 was multiplied by 5 to get 20, so x = 3 × 5 = 15. Or cross-multiply: 4x = 60.', gens: [
+        () => { const a = ri(1, 7), b = ri(a + 1, 9), k = ri(2, 9); return num(`Solve: {${a}/${b}} = {x/${b * k}}`, a * k, `${b} × ${k} = ${b * k}, so x = ${a} × ${k} = ${a * k}.`); },
+        () => { const a = ri(2, 5), c = ri(2, 6), k = ri(2, 5); return num(`${a} notebooks cost $${a * c}. How much do ${a * k} notebooks cost, in dollars?`, a * c * k, `That is ${k} times as many notebooks, so ${k} times the cost: ${a * c * k}.`); },
+        () => { const k = ri(2, 9), x = ri(2, 6), x2 = ri(7, 12); return mcn(`y is proportional to x. When x = ${x}, y = ${k * x}. What is y when x = ${x2}?`, k * x2, `y is always ${k} times x. ${k} × ${x2} = ${k * x2}.`, [k * x + x2, x2 + k]); },
+        () => { const s = pick([5, 10, 20, 25, 50]), n = ri(2, 9); return num(`A map uses 1 inch for ${s} miles. How many miles is ${n} inches?`, s * n, `${n} × ${s} = ${s * n} miles.`); },
+        () => { const k = ri(2, 12), x = ri(2, 9); return mcn(`In y = kx, x = ${x} gives y = ${k * x}. What is k?`, k, `k = y ÷ x = ${k * x} ÷ ${x} = ${k}.`, [k * x - x, x]); },
+      ] },
+      { name: 'Percent change', tip: 'For a discount, find the percent of the price and subtract it. For tax or a tip, add it. Percent change = change ÷ original × 100. From 40 to 50 is a change of 10, and 10 ÷ 40 = 25%.', gens: [
+        () => { const price = 20 * ri(1, 10), pc = pick([10, 20, 25, 30, 50]); return num(`A $${price} jacket is ${pc}% off. What is the sale price in dollars?`, price * (100 - pc) / 100, `${pc}% of ${price} is ${price * pc / 100}. ${price} - ${price * pc / 100} = ${price * (100 - pc) / 100}.`); },
+        () => { const m = 20 * ri(1, 6), t = pick([10, 15, 20]); return num(`A meal costs $${m}. You leave a ${t}% tip. What is the total in dollars?`, m + m * t / 100, `${t}% of ${m} is ${m * t / 100}. ${m} + ${m * t / 100} = ${m + m * t / 100}.`); },
+        () => { const a = pick([20, 40, 60, 80, 200]), pc = pick([10, 20, 25, 50, 100]), b = a * (100 + pc) / 100; return mcn(`A price goes from $${a} to $${b}. What is the percent increase?`, pc, `The change is ${b - a}. ${b - a} ÷ ${a} = ${pc / 100}, which is ${pc}%.`, [b - a, rd((b - a) / b * 100, 0)]); },
+        () => { const [s, t, w] = pick(PCT_FACTS); return tf(s, t, w); },
+      ] },
+      { name: 'Two-step equations', tip: 'Undo the adding or subtracting first, then undo the multiplying or dividing. 3x + 5 = 20: subtract 5 to get 3x = 15, then divide by 3 to get x = 5.', gens: [
+        () => { const a = ri(2, 9), x = ri(-5, 9), b = ri(1, 12); return num(`Solve: ${a}x + ${b} = ${a * x + b}`, x, `Subtract ${b}: ${a}x = ${a * x}. Divide by ${a}: x = ${x}.`); },
+        () => { const a = ri(2, 9), x = ri(-4, 9), b = ri(1, 12); return num(`Solve: ${a}x - ${b} = ${a * x - b}`, x, `Add ${b}: ${a}x = ${a * x}. Divide by ${a}: x = ${x}.`); },
+        () => { const a = ri(2, 6), b = ri(1, 9), c = ri(1, 9); return num(`Solve: {x/${a}} - ${b} = ${c}`, a * (b + c), `Add ${b}: {x/${a}} = ${b + c}. Multiply by ${a}: x = ${a * (b + c)}.`); },
+        () => { const a = ri(2, 6), x = ri(-3, 9), b = ri(1, 9); return num(`Solve: ${a}(x + ${b}) = ${a * (x + b)}`, x, `Divide by ${a}: x + ${b} = ${x + b}. Subtract ${b}: x = ${x}.`); },
+        () => { const a = ri(2, 9), b = ri(2, 12), c = b + a * ri(2, 9); return mc(`What is the best first step to solve ${a}x + ${b} = ${c}?`, `Subtract ${b} from both sides`, [`Add ${b} to both sides`, `Divide only the ${c} by ${a}`, `Multiply both sides by ${a}`], 'Undo the adding first, then the multiplying.'); },
+      ] },
+      { name: 'Circles and chance', tip: 'For a circle with radius r: circumference = 2πr and area = πr^2. Probability = (ways you want) ÷ (all possible ways). One red out of 4 marbles is a chance of {1/4}.', gens: [
+        () => { const r = ri(3, 12); return mc(`A circle has a radius of ${r}. What is its circumference?`, `${2 * r}π`, [`${r}π`, `${r * r}π`, `${4 * r}π`, `${2 * r + 2}π`], `C = 2πr = 2 × π × ${r} = ${2 * r}π.`); },
+        () => { const r = ri(3, 12); return mc(`A circle has a radius of ${r}. What is its area?`, `${r * r}π`, [`${2 * r}π`, `${r}π`, `${4 * r * r}π`, `${r * r + r}π`], `A = πr^2 = π × ${r} × ${r} = ${r * r}π.`); },
+        () => { const r = ri(1, 6), b = ri(1, 6), t = r + b; return mc(`A bag has ${r} red and ${b} blue marbles. You pick one without looking. What is the chance it is red?`, fr(r, t), [fr(b, t), fr(r, t + 1), fr(1, t), fr(r + 1, t + 2), fr(1, t + 1), fr(r, t + 2), '{3/4}', '{2/3}', '{1/5}', '{1/3}'].filter(x => x !== '1'), `${r} of the ${t} marbles are red: ${fr(r, t)}.`); },
+        () => { const r = ri(2, 15); return num(`A circle has a diameter of ${2 * r}. What is its radius?`, r, `The radius is half the diameter: ${2 * r} ÷ 2 = ${r}.`); },
+        () => { const k = ri(1, 5); return mc(`You roll a number cube (1 to 6). What is the chance of rolling a number greater than ${k}?`, fr(6 - k, 6), ['{1/6}', '{1/3}', '{1/2}', '{2/3}', '{5/6}', '{1/4}'], `${6 - k} of the 6 numbers are greater than ${k}: ${fr(6 - k, 6)}.`); },
+      ] },
+    ],
+  });
+
+  const TRIPLES = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15], [12, 16, 20]];
+  MT.grades.push({
+    grade: 8, title: 'Exponents, roots, lines and systems', sections: [
+      { name: 'Exponents', tip: 'An exponent says how many times to multiply: 2^3 = 2 × 2 × 2 = 8. Same base: multiply by adding exponents (2^3 × 2^4 = 2^7), divide by subtracting. A negative exponent flips: 2^-3 = {1/8}.', gens: [
+        () => { const b = ri(2, 5), e = ri(2, 4); return num(`${b}^${e} = ?`, b ** e, `Multiply ${b} by itself ${e} times: ${b ** e}.`); },
+        () => { const b = ri(2, 9), m = ri(2, 7), n = ri(2, 7); return num(`${b}^${m} × ${b}^${n} = ${b}^☐   What goes in the box?`, m + n, `Same base, so add the exponents: ${m} + ${n} = ${m + n}.`); },
+        () => { const b = ri(2, 9), m = ri(2, 5), n = ri(2, 4); return num(`(${b}^${m})^${n} = ${b}^☐   What goes in the box?`, m * n, `A power of a power: multiply the exponents: ${m} × ${n} = ${m * n}.`); },
+        () => { const b = ri(2, 5), e = ri(2, 3); return mc(`${b}^-${e} = ?`, `{1/${b ** e}}`, [`-${b ** e}`, `-{1/${b ** e}}`, `${b ** e}`, `{1/${b * e + 1}}`], `A negative exponent means "one over": {1/${b}^${e}} = {1/${b ** e}}.`); },
+        () => { const m = ri(11, 99) / 10, e = ri(2, 5), v = rd(m * 10 ** e, 0); return mc(`${m} × 10^${e} = ?`, String(v), [String(v * 10), String(v / 10), String(rd(m * e, 1))], `Move the decimal point ${e} places to the right: ${v}.`); },
+        () => { const b = ri(2, 9), n = ri(2, 5), m = n + ri(1, 5); return num(`${b}^${m} ÷ ${b}^${n} = ${b}^☐   What goes in the box?`, m - n, `Same base, so subtract the exponents: ${m} - ${n} = ${m - n}.`); },
+      ] },
+      { name: 'Roots and right triangles', tip: 'A square root undoes squaring: √49 = 7 because 7 × 7 = 49. In a right triangle, a^2 + b^2 = c^2, where c is the longest side. Legs 3 and 4 give c = 5.', gens: [
+        () => { const n = ri(2, 15); return num(`√${n * n} = ?`, n, `${n} × ${n} = ${n * n}.`); },
+        () => { const [a, b, c] = pick(TRIPLES); return num('How long is the missing side?', c, `${a}^2 + ${b}^2 = ${a * a} + ${b * b} = ${c * c}, and √${c * c} = ${c}.`, figTri(a, b, '?')); },
+        () => { const [a, b, c] = pick(TRIPLES); return num('How long is the missing side?', b, `${c}^2 - ${a}^2 = ${c * c} - ${a * a} = ${b * b}, and √${b * b} = ${b}.`, figTri(a, '?', c)); },
+        () => { let n = ri(5, 99); if (Number.isInteger(Math.sqrt(n))) n += 1; const lo = Math.floor(Math.sqrt(n)); return mc(`√${n} is between which two whole numbers?`, `${lo} and ${lo + 1}`, [`${lo - 1} and ${lo}`, `${lo + 1} and ${lo + 2}`, `${lo + 2} and ${lo + 3}`], `${lo}^2 = ${lo * lo} and ${lo + 1}^2 = ${(lo + 1) ** 2}. ${n} is between them.`); },
+        () => pickMix('Tap every perfect square.', [4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144], [8, 12, 18, 20, 24, 27, 32, 45, 48, 50, 60, 72, 90, 99, 110, 125], 3, 3, 'A perfect square is a whole number times itself, like 6 × 6 = 36.'),
+      ] },
+      { name: 'Linear equations', tip: 'Collect the x terms on one side and the numbers on the other. 5x - 3 = 2x + 9: subtract 2x to get 3x - 3 = 9, add 3 to get 3x = 12, so x = 4.', gens: [
+        () => { const a = ri(3, 9), c = ri(1, a - 1), x = ri(-4, 8), b = ri(1, 9), d = (a - c) * x - b; return num(`Solve: ${lin(a, -b)} = ${lin(c, d)}`, x, `Subtract ${c}x from both sides: ${lin(a - c, -b)} = ${d}. Then x = ${x}.`); },
+        () => { const a = ri(2, 5), c = ri(1, a - 1), b = ri(1, 6), x = ri(-3, 9), d = a * (x - b) - c * x; return num(`Solve: ${a}(x - ${b}) = ${lin(c, d)}`, x, `Expand: ${lin(a, -a * b)} = ${lin(c, d)}. Collect terms: ${lin(a - c, 0)} = ${d + a * b}. So x = ${x}.`); },
+        () => { const a = ri(2, 6), b = ri(1, 9), c = b + ri(1, 9); return num(`Solve: {x/${a}} + ${b} = ${c}`, a * (c - b), `Subtract ${b}: {x/${a}} = ${c - b}. Multiply by ${a}: x = ${a * (c - b)}.`); },
+        () => { const a = ri(2, 9), b = ri(1, 9), same = rnd() < 0.5, c = same ? b : b + ri(1, 5); return mc(`How many solutions does ${a}x + ${b} = ${a}x + ${c} have?`, same ? 'Infinitely many' : 'None', ['None', 'One', 'Two', 'Infinitely many'], same ? 'Both sides are identical, so every number works.' : `Subtract ${a}x from both sides and you get ${b} = ${c}, which is never true.`); },
+      ] },
+      { name: 'Slope and lines', tip: 'Slope is rise over run: how far up for each step right. Between (1, 2) and (3, 8) the slope is (8 - 2) ÷ (3 - 1) = 3. In y = mx + b, m is the slope and b is where the line crosses the y-axis.', gens: [
+        () => { const m = nz(-4, 5), x1 = ri(-4, 3), y1 = ri(-5, 5), dx = ri(1, 4); return num(`What is the slope of the line through (${x1}, ${y1}) and (${x1 + dx}, ${y1 + m * dx})?`, m, `Rise ÷ run = ${m * dx} ÷ ${dx} = ${m}.`); },
+        () => { const m = nz(-6, 6), b = nz(-9, 9); return mcn(`What is the slope of y = ${lin(m, b)}?`, m, 'In y = mx + b, the slope is the number multiplying x.', [b, -m]); },
+        () => { const m = nz(-6, 6), b = nz(-9, 9); return mcn(`Where does y = ${lin(m, b)} cross the y-axis? (Give the y value.)`, b, 'In y = mx + b, the line crosses the y-axis at b.', [m, -b]); },
+        () => { const m = nz(-5, 5), b = ri(-9, 9), x = ri(-4, 6); return num(`For y = ${lin(m, b)}, what is y when x = ${x}?`, m * x + b, `${m} × ${p(x)} = ${m * x}, then ${b < 0 ? 'subtract ' + -b : 'add ' + b}: ${m * x + b}.`); },
+        () => { const m = pick([-2, -1, 1, 2, 3]), b = ri(-2, 2); return mcn('What is the slope of this line? The two dots are on the line.', m, `From one dot to the next, go right 1 and ${m > 0 ? 'up' : 'down'} ${Math.abs(m)}. Slope = ${m}.`, [-m, b === m ? m + 1 : b], figGrid([[0, b], [1, b + m]], -5, 5, [[0, b], [1, b + m]])); },
+      ] },
+      { name: 'Systems of equations', tip: 'A system is two equations that share an answer. If y = 2x + 1 and y = x + 4, set them equal: 2x + 1 = x + 4, so x = 3 and y = 7. The answer is the point (3, 7).', gens: [
+        () => { const x = ri(-3, 5), m1 = nz(-3, 4), b1 = ri(-6, 6), y = m1 * x + b1; let m2 = nz(-3, 4); if (m2 === m1) m2 = m1 + 1 || 2; const b2 = y - m2 * x; return mc(`Solve the system:   y = ${lin(m1, b1)}   and   y = ${lin(m2, b2)}`, `(${x}, ${y})`, [`(${y}, ${x})`, `(${x + 1}, ${y})`, `(${x}, ${y + 1})`, `(${-x}, ${y})`, `(${x - 1}, ${y - 1})`], `Set them equal and solve: x = ${x}. Put it back in: y = ${y}.`); },
+        () => { const x = ri(2, 12), y = ri(1, x - 1); return num(`x + y = ${x + y} and x - y = ${x - y}. What is x?`, x, `Add the two equations: 2x = ${2 * x}, so x = ${x}.`); },
+        () => { const m = nz(-4, 4), b = ri(-6, 6), x = ri(-3, 5), ok = rnd() < 0.5, y = m * x + b + (ok ? 0 : pick([-2, -1, 1, 2])); return tf(`(${x}, ${y}) is a solution of y = ${lin(m, b)}.`, ok, `Put x = ${x} in: y = ${m * x + b}.`); },
+        () => { const a = ri(1, 5), k = ri(1, 4), x = ri(1, 8); return num(`${lin(a, 0)} + y = ${(a + k) * x} and y = ${lin(k, 0)}. What is x?`, x, `Replace y with ${lin(k, 0)}: ${a + k}x = ${(a + k) * x}, so x = ${x}.`); },
+      ] },
+    ],
+  });
+})();
+
+/* Math Trail - grades 9 to 12 (algebra, geometry, algebra 2, pre-calculus and calculus). */
+(function () {
+  const { rnd, ri, pick, shuffle, range, distinct, nz, rd, fact, fr, p, poly, lin, mono, fac, facs, cx, mc, mcn, num, tf, matchOf, pickAll, figTri } = MT;
+  const SUB = '₀₁₂₃₄₅₆₇₈₉', sub = n => String(n).split('').map(c => SUB[c]).join('');
+  const quadCount = () => {                       // a quadratic with 0, 1 or 2 real solutions
+    const kind = pick([0, 1, 2]);
+    if (kind === 2) { const [r, s] = distinct(2, -6, 6); return { cs: [1, -(r + s), r * s], n: 'Two' }; }
+    if (kind === 1) { const r = nz(-6, 6); return { cs: [1, -2 * r, r * r], n: 'One' }; }
+    const h = ri(-3, 3), k = ri(1, 9); return { cs: [1, -2 * h, h * h + k], n: 'None' };
+  };
+  const disc = ([a, b, c]) => b * b - 4 * a * c;
+
+  MT.grades.push({
+    grade: 9, title: 'Algebra: polynomials, factoring and quadratics', sections: [
+      { name: 'Polynomials', tip: 'Like terms have the same letter and power, so you can combine them: 3x + 2x = 5x. To expand brackets, multiply everything inside. (x + 2)(x + 3) = x^2 + 3x + 2x + 6 = x^2 + 5x + 6.', gens: [
+        () => { const a = ri(2, 9), c = ri(2, 9), b = ri(2, 12), d = ri(1, 12); return mc(`Simplify: ${a}x + ${b} + ${c}x - ${d}`, lin(a + c, b - d), [lin(a + c, b + d), lin(a * c, b - d), lin(a + c + b, -d), lin(a + c, d - b || 1), lin(a + c + 1, b - d)], `x terms: ${a}x + ${c}x = ${a + c}x. Numbers: ${b} - ${d} = ${b - d}.`); },
+        () => { const a = ri(2, 6), b = ri(2, 6), c = ri(1, 9); return mc(`Expand: ${a}(${lin(b, -c)})`, lin(a * b, -a * c), [lin(a * b, -c), lin(a + b, -a * c), lin(a * b, a * c), lin(b, -a * c)], `Multiply both terms by ${a}: ${a * b}x and ${a * c}.`); },
+        () => { const a = nz(-6, 6), b = nz(-6, 6); return mc(`Expand: ${fac(a)}${fac(b)}`, poly([1, a + b, a * b]), [poly([1, a * b, a + b]), poly([1, a + b, -a * b]), poly([1, a - b, a * b]), poly([1, 0, a * b]), poly([1, a + b + 1, a * b])], `First, outer, inner, last: x^2 ${a < 0 ? '-' : '+'} ${Math.abs(a)}x ${b < 0 ? '-' : '+'} ${Math.abs(b)}x ${a * b < 0 ? '-' : '+'} ${Math.abs(a * b)}.`); },
+        () => { const a = ri(1, 3), b = nz(-5, 5), c = ri(-9, 9), x = ri(-3, 4); return num(`If x = ${x}, what is ${poly([a, b, c])}?`, a * x * x + b * x + c, `${a === 1 ? '' : a + ' × '}${p(x)}^2 = ${a * x * x}, ${b} × ${p(x)} = ${b * x}. Total: ${a * x * x + b * x + c}.`); },
+      ] },
+      { name: 'Factoring', tip: 'Factoring undoes expanding. For x^2 + 5x + 6, find two numbers that multiply to 6 and add to 5: they are 2 and 3. So x^2 + 5x + 6 = (x + 2)(x + 3).', gens: [
+        () => { let a = nz(-7, 7), b = nz(-7, 7); if (a === -b) b = b > 0 ? b + 1 : b - 1; return mc(`Factor: ${poly([1, a + b, a * b])}`, facs(a, b), [facs(-a, -b), facs(a, -b), facs(-a, b), facs(a + 1, b - 1 || 2), facs(a * b, 1)], `Find two numbers that multiply to ${a * b} and add to ${a + b}: ${a} and ${b}.`); },
+        () => { const g = ri(2, 6), [a, b] = pick([[2, 3], [3, 2], [1, 4], [3, 4], [2, 5], [5, 2], [4, 3], [1, 3]]); return mc(`Factor completely: ${poly([a * g, b * g, 0])}`, `${g}x(${lin(a, b)})`, [`${g}(${lin(a, b)})`, `x(${lin(a * g, b * g)})`, `${g}x(${lin(a, b * g)})`, `${g}x(${lin(b, a)})`], `Both terms share ${g}x. Take it out: ${g}x(${lin(a, b)}).`); },
+        () => { const k = ri(2, 12); return mc(`Factor: x^2 - ${k * k}`, `(x + ${k})(x - ${k})`, [`(x - ${k})^2`, `(x + ${k})^2`, `(x + ${k * k})(x - 1)`, `x(x - ${k * k})`], `A difference of squares: a^2 - b^2 = (a + b)(a - b), with b = ${k}.`); },
+        () => { const a = nz(-6, 6), b = nz(-6, 6), ok = rnd() < 0.5; return tf(`${fac(a)}${fac(b)} = ${poly([1, ok ? a + b : a * b, ok ? a * b : a + b])}`, ok || a + b === a * b, `The middle number is the sum (${a + b}) and the last number is the product (${a * b}).`); },
+      ] },
+      { name: 'Quadratic equations', tip: 'If two things multiply to zero, one of them is zero. (x - 2)(x - 3) = 0 means x = 2 or x = 3. So factor first, then set each bracket to zero.', gens: [
+        () => { const [r, s] = distinct(2, -6, 6), bad = shuffle([-r, -s, r + s, r * s, r + 1, s - 1, 0, r - 1].filter((v, i, a) => v !== r && v !== s && a.indexOf(v) === i)).slice(0, 4); return pickAll(`Tap every solution of ${poly([1, -(r + s), r * s])} = 0.`, [{ t: String(r), ok: true }, { t: String(s), ok: true }, ...bad.map(v => ({ t: String(v), ok: false }))], `It factors to ${facs(-r, -s)} = 0, so x = ${Math.min(r, s)} or x = ${Math.max(r, s)}.`); },
+        () => { const [r, s] = distinct(2, -8, 8); return num(`What is the larger solution of ${facs(-r, -s)} = 0?`, Math.max(r, s), `Each bracket can be zero: x = ${Math.min(r, s)} or x = ${Math.max(r, s)}.`); },
+        () => { const { cs, n } = quadCount(); return mc(`How many real solutions does ${poly(cs)} = 0 have?`, n, ['None', 'One', 'Two', 'Three'], `b^2 - 4ac = ${disc(cs)}. ${disc(cs) > 0 ? 'Positive means two solutions.' : disc(cs) === 0 ? 'Zero means one solution.' : 'Negative means no real solutions.'}`); },
+        () => { const k = ri(2, 13); return num(`x^2 = ${k * k}. What is the positive solution?`, k, `√${k * k} = ${k} (and -${k} also works).`); },
+        () => { const h = nz(-6, 6), c = ri(-9, 9); return mcn(`What is the x-coordinate of the vertex of y = ${poly([1, -2 * h, c])}?`, h, `x = -b ÷ (2a) = ${2 * h} ÷ 2 = ${h}.`, [-h, 2 * h, -2 * h]); },
+      ] },
+      { name: 'Inequalities', tip: 'Solve an inequality like an equation, with one extra rule: when you multiply or divide by a negative number, flip the sign. -2x < 6 becomes x > -3.', gens: [
+        () => { const a = ri(2, 9), b = ri(1, 12), x = nz(-6, 9); return mc(`Solve: ${a}x + ${b} > ${a * x + b}`, `x > ${x}`, [`x < ${x}`, `x > ${x + b}`, `x ≥ ${x}`, `x > ${-x}`], `Subtract ${b}, then divide by ${a}. The sign stays the same.`); },
+        () => { const a = ri(2, 9), k = nz(-8, 8); return mc(`Solve: -${a}x < ${a * k}`, `x > ${-k}`, [`x < ${-k}`, `x > ${k}`, `x < ${k}`], 'Dividing by a negative number flips the sign.'); },
+        () => { const a = ri(2, 5), b = ri(-6, 6), x0 = ri(-3, 5), c = a * x0 + b; return pickAll(`Tap every number that makes ${lin(a, b)} ≤ ${c} true.`, shuffle(range(x0 - 3, x0 + 3)).slice(0, 6).map(v => ({ t: String(v), ok: v <= x0 })), `Solving gives x ≤ ${x0}.`); },
+        () => { const a = ri(2, 6), b = ri(1, 9), x0 = ri(-2, 6), c = a * x0 - b, v = x0 + pick([-2, -1, 0, 1, 2]); return tf(`x = ${v} makes ${a}x - ${b} ≥ ${c} true.`, v >= x0, `Solving gives x ≥ ${x0}.`); },
+      ] },
+      { name: 'Functions', tip: 'A function is a rule: put a number in, get one number out. If f(x) = 2x + 1, then f(3) = 2 × 3 + 1 = 7. The x-intercept is where y = 0.', gens: [
+        () => { const a = ri(1, 3), b = nz(-5, 5), c = ri(-9, 9), x = ri(-3, 4); return num(`f(x) = ${poly([a, b, c])}. What is f(${x})?`, a * x * x + b * x + c, `Replace x with ${p(x)}: ${a * x * x} ${b * x < 0 ? '-' : '+'} ${Math.abs(b * x)} ${c < 0 ? '-' : '+'} ${Math.abs(c)} = ${a * x * x + b * x + c}.`); },
+        () => { const a = ri(2, 5), b = ri(2, 3), x = ri(2, 4); return num(`f(x) = ${a} · ${b}^x. What is f(${x})?`, a * b ** x, `${b}^${x} = ${b ** x}, and ${a} × ${b ** x} = ${a * b ** x}.`); },
+        () => { const m = nz(-5, 5), k = nz(-6, 6); return num(`Where does y = ${lin(m, -m * k)} cross the x-axis? (Give the x value.)`, k, `Set y = 0: ${m}x = ${m * k}, so x = ${k}.`); },
+        () => { const m = nz(-4, 5), b = ri(-6, 6), f = x => m * x + b; return mc(`Which rule fits this table?   x: 1, 2, 3   y: ${f(1)}, ${f(2)}, ${f(3)}`, `y = ${lin(m, b)}`, [`y = ${lin(m, b + 1)}`, `y = ${lin(m + 1, b - 1)}`, `y = ${lin(-m, b)}`, `y = ${lin(m + 1, b)}`], `y changes by ${m} each step, so the slope is ${m}. Then check a point.`); },
+      ] },
+    ],
+  });
+
+  const POLY_NAME = { 3: 'triangle', 4: 'square', 5: 'pentagon', 6: 'hexagon', 8: 'octagon', 9: 'nonagon', 10: 'decagon', 12: 'dodecagon' };
+  const SPECIAL = [['sin 30°', '{1/2}'], ['cos 60°', '{1/2}'], ['sin 45°', '{√2/2}'], ['cos 45°', '{√2/2}'], ['sin 60°', '{√3/2}'], ['cos 30°', '{√3/2}'], ['tan 45°', '1'], ['sin 90°', '1'], ['cos 90°', '0'], ['cos 0°', '1'], ['sin 0°', '0'], ['tan 60°', '√3']];
+  const TRIP = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [9, 12, 15]];
+  MT.grades.push({
+    grade: 10, title: 'Geometry: angles, similarity, trig and circles', sections: [
+      { name: 'Angles', tip: 'Angles in a triangle add to 180°. Angles on a straight line add to 180° (supplementary). Angles in a right angle add to 90° (complementary). A polygon with n sides has angles adding to (n - 2) × 180°.', gens: [
+        () => { const a = ri(25, 95), b = ri(25, 150 - a); return num(`Two angles of a triangle are ${a}° and ${b}°. What is the third angle, in degrees?`, 180 - a - b, `180 - ${a} - ${b} = ${180 - a - b}.`); },
+        () => { const sup = rnd() < 0.5, a = sup ? ri(20, 160) : ri(10, 80); return num(`Two angles are ${sup ? 'supplementary' : 'complementary'}. One is ${a}°. What is the other, in degrees?`, (sup ? 180 : 90) - a, `${sup ? 'Supplementary angles add to 180' : 'Complementary angles add to 90'}: ${(sup ? 180 : 90) - a}.`); },
+        () => { const n = ri(5, 12); return num(`What is the sum of the interior angles of a polygon with ${n} sides, in degrees?`, (n - 2) * 180, `(${n} - 2) × 180 = ${(n - 2) * 180}.`); },
+        () => { const n = pick([3, 4, 5, 6, 8, 9, 10, 12]), a = (n - 2) * 180 / n; return mcn(`How many degrees is each interior angle of a regular ${POLY_NAME[n]} (${n} sides)?`, a, `(${n} - 2) × 180 ÷ ${n} = ${a}.`, [360 / n, 180 - a === 360 / n ? a + 15 : 180 - a]); },
+        () => { const a = ri(20, 160); return num(`Two straight lines cross. One angle is ${a}°. What is the angle directly opposite it?`, a, 'Opposite (vertical) angles are equal.'); },
+      ] },
+      { name: 'Similar triangles', tip: 'Similar shapes have the same angles, and their sides are multiplied by one scale factor. If the factor is 3, a side of 4 becomes 12. Areas are multiplied by the factor squared.', gens: [
+        () => { const [a, b, c] = pick([[3, 4, 5], [4, 5, 6], [5, 7, 8], [6, 7, 9], [2, 3, 4]]), k = ri(2, 6); return num(`Two triangles are similar. The small one has sides ${a}, ${b}, ${c}. The side matching ${a} in the big one is ${a * k}. How long is the side matching ${b}?`, b * k, `The scale factor is ${a * k} ÷ ${a} = ${k}. ${b} × ${k} = ${b * k}.`); },
+        () => { const h = ri(4, 9), s = ri(2, 6), k = ri(2, 6); return mcn(`A ${h}-foot pole casts a ${s}-foot shadow. At the same time a tree casts a ${s * k}-foot shadow. How tall is the tree, in feet?`, h * k, `The tree's shadow is ${k} times as long, so the tree is ${k} times as tall: ${h * k}.`, [h + s * k - s, h * s]); },
+        () => { const k = ri(2, 7); return mcn(`Two similar figures have a scale factor of ${k}. Their areas are multiplied by what number?`, k * k, `Areas use the scale factor squared: ${k}^2 = ${k * k}.`, [k, 2 * k, k ** 3]); },
+        () => { const a = ri(2, 7), b = ri(a + 1, 9), k = ri(2, 6); return num(`Solve for x: {${a}/${b}} = {${a * k}/x}`, b * k, `${a} × ${k} = ${a * k}, so x = ${b} × ${k} = ${b * k}.`); },
+      ] },
+      { name: 'Right-triangle trig', tip: 'SOH-CAH-TOA. sin θ = opposite ÷ hypotenuse. cos θ = adjacent ÷ hypotenuse. tan θ = opposite ÷ adjacent. The hypotenuse is the longest side, across from the right angle.', gens: [
+        () => { const [a, b, c] = pick(TRIP), f = pick(['sin', 'cos', 'tan']), all = { sin: fr(a, c), cos: fr(b, c), tan: fr(a, b) }; return mc(`What is ${f} θ?`, all[f], [all.sin, all.cos, all.tan, fr(b, a), fr(c, a), fr(c, b)], `${f} θ = ${f === 'sin' ? 'opposite ÷ hypotenuse' : f === 'cos' ? 'adjacent ÷ hypotenuse' : 'opposite ÷ adjacent'} = ${all[f]}.`, figTri(a, b, c, true)); },
+        () => matchOf('Match each name to its rule.', () => pick([['sin θ', 'opposite ÷ hypotenuse'], ['cos θ', 'adjacent ÷ hypotenuse'], ['tan θ', 'opposite ÷ adjacent'], ['Pythagorean theorem', 'a^2 + b^2 = c^2'], ['Angles in a triangle', 'add to 180°']]), 'SOH-CAH-TOA: Sine Opposite Hypotenuse, Cosine Adjacent Hypotenuse, Tangent Opposite Adjacent.'),
+        () => { const [q, a] = pick(SPECIAL); return mc(`${q} = ?`, a, shuffle(['0', '{1/2}', '{√2/2}', '{√3/2}', '1', '√3']), `This is one of the special values worth knowing: ${q} = ${a}.`); },
+        () => { const [a, , c] = pick(TRIP), k = ri(2, 5); return num(`In a right triangle, sin θ = {${a}/${c}}. The hypotenuse is ${c * k}. How long is the opposite side?`, a * k, `Opposite = hypotenuse × sin θ = ${c * k} × {${a}/${c}} = ${a * k}.`); },
+      ] },
+      { name: 'Circles and solids', tip: 'Circle: area = πr^2, circumference = 2πr. A sector is a slice: take the same fraction of the area as the angle is of 360°. Cylinder volume = πr^2h. A cone is one third of that.', gens: [
+        () => { const r = ri(2, 6), h = ri(3, 10); return mc(`A cylinder has radius ${r} and height ${h}. What is its volume?`, `${r * r * h}π`, [`${2 * r * h}π`, `${r * h}π`, `${2 * r * r * h}π`, `${r * r + h}π`, `${r * r * h + r}π`], `V = πr^2h = π × ${r * r} × ${h} = ${r * r * h}π.`); },
+        () => { const r = pick([3, 6, 9]), v = 4 * r ** 3 / 3; return mc(`A sphere has radius ${r}. What is its volume?`, `${v}π`, [`${r ** 3}π`, `${3 * r * r}π`, `${4 * r ** 3}π`, `${2 * r ** 3}π`], `V = {4/3}πr^3 = {4/3} × ${r ** 3} × π = ${v}π.`); },
+        () => { const r = pick([6, 12]), deg = pick([60, 90, 120, 180]), a = r * r * deg / 360; return mc(`A sector with a ${deg}° angle is cut from a circle of radius ${r}. What is its area?`, `${a}π`, [`${r * r}π`, `${r * deg / 180}π`, `${2 * a}π`, `${a + r}π`], `The sector is {${deg}/360} of the circle: {${deg}/360} × ${r * r}π = ${a}π.`); },
+        () => { const v = ri(4, 30); return num(`A cylinder has a volume of ${3 * v}. A cone has the same base and height. What is the cone's volume?`, v, `A cone is one third of the cylinder: ${3 * v} ÷ 3 = ${v}.`); },
+        () => { const r = pick([6, 12, 18]), deg = pick([60, 90, 120, 180]), L = r * deg / 180; return mc(`How long is a ${deg}° arc on a circle of radius ${r}?`, `${L}π`, [`${2 * r}π`, `${r * r * deg / 360}π`, `${2 * L}π`, `${L + 1}π`], `The arc is {${deg}/360} of the circumference ${2 * r}π: ${L}π.`); },
+      ] },
+      { name: 'Coordinate geometry', tip: 'Distance between two points uses the Pythagorean theorem: √(run^2 + rise^2). The midpoint is the average of the x values and the average of the y values. Perpendicular slopes are negative reciprocals.', gens: [
+        () => { const [a, b, c] = pick([[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17]]), x1 = ri(-5, 5), y1 = ri(-5, 5), sx = pick([-1, 1]), sy = pick([-1, 1]); return num(`What is the distance between (${x1}, ${y1}) and (${x1 + sx * a}, ${y1 + sy * b})?`, c, `Run ${a}, rise ${b}: √(${a * a} + ${b * b}) = √${c * c} = ${c}.`); },
+        () => { const mx = ri(-5, 6), my = ri(-5, 6), dx = ri(1, 5), dy = ri(1, 5); return mc(`What is the midpoint of (${mx - dx}, ${my - dy}) and (${mx + dx}, ${my + dy})?`, `(${mx}, ${my})`, [`(${2 * dx}, ${2 * dy})`, `(${2 * mx}, ${2 * my})`, `(${my}, ${mx})`, `(${mx + 1}, ${my})`, `(${mx}, ${my - 1})`], `Average the x values and the y values: (${mx}, ${my}).`); },
+        () => { const m = pick([2, 3, 4, 5, -2, -3, -4]); return mc(`A line has slope ${m}. What is the slope of a line perpendicular to it?`, fr(-1, m), [String(m), String(-m), fr(1, m)], 'Flip the fraction and change the sign.'); },
+        () => { const h = nz(-6, 6), k = nz(-6, 6), r = ri(2, 9); return num(`A circle has the equation (x ${h < 0 ? '+' : '-'} ${Math.abs(h)})^2 + (y ${k < 0 ? '+' : '-'} ${Math.abs(k)})^2 = ${r * r}. What is its radius?`, r, `The right side is r^2, so r = √${r * r} = ${r}.`); },
+      ] },
+    ],
+  });
+
+  MT.grades.push({
+    grade: 11, title: 'Algebra 2: complex numbers, logs and sequences', sections: [
+      { name: 'Complex numbers', tip: 'i is the square root of -1, so i^2 = -1. Powers of i repeat every four: i, -1, -i, 1. Add complex numbers by combining real parts and i parts: (2 + 3i) + (1 - i) = 3 + 2i.', gens: [
+        () => { const n = ri(2, 23); return mc(`i^${n} = ?`, ['1', 'i', '-1', '-i'][n % 4], ['1', 'i', '-1', '-i'], `Powers of i repeat every 4. ${n} ÷ 4 leaves remainder ${n % 4}.`); },
+        () => { const k = ri(2, 12); return mc(`√(-${k * k}) = ?`, `${k}i`, [`-${k}`, `${k}`, `${k * k}i`, `-${k}i`], `√(-${k * k}) = √${k * k} × √(-1) = ${k}i.`); },
+        () => { const a = nz(-8, 8), b = nz(-8, 8), c = nz(-8, 8), d = nz(-8, 8); return mc(`(${cx(a, b)}) + (${cx(c, d)}) = ?`, cx(a + c, b + d), [cx(a + c, b - d), cx(a - c, b + d), cx(a + d, b + c), cx(a + c + 1, b + d), cx(a + c, b + d + 1)], `Real parts: ${a} + ${p(c)} = ${a + c}. i parts: ${b} + ${p(d)} = ${b + d}.`); },
+        () => { const a = ri(1, 5), b = nz(-4, 4), c = ri(1, 5), d = nz(-4, 4); return mc(`(${cx(a, b)})(${cx(c, d)}) = ?`, cx(a * c - b * d, a * d + b * c), [cx(a * c + b * d, a * d + b * c), cx(a * c, b * d), cx(a * c - b * d, a * d - b * c), cx(a * c - b * d + 1, a * d + b * c), cx(a * c - b * d, a * d + b * c + 1)], `Multiply out and use i^2 = -1: ${a * c} ${a * d + b * c < 0 ? '-' : '+'} ${Math.abs(a * d + b * c)}i ${-b * d < 0 ? '-' : '+'} ${Math.abs(b * d)}.`); },
+        () => { const { cs } = quadCount(); return num(`What is the discriminant (b^2 - 4ac) of ${poly(cs)} = 0?`, disc(cs), `(${cs[1]})^2 - 4 × ${cs[0]} × ${p(cs[2])} = ${disc(cs)}. ${disc(cs) < 0 ? 'Negative, so the solutions are complex.' : ''}`); },
+      ] },
+      { name: 'Exponents and logs', tip: 'A logarithm asks: what power? log₂ 8 = 3 because 2^3 = 8. Logs turn multiplying into adding: log(ab) = log a + log b. A fraction power is a root: 8^(1/3) = 2.', gens: [
+        () => { const b = pick([2, 3, 4, 5, 10]), e = ri(2, b === 2 ? 6 : b === 10 ? 4 : 3); return num(`log${sub(b)} ${b ** e} = ?`, e, `${b}^${e} = ${b ** e}, so the answer is ${e}.`); },
+        () => { const b = pick([2, 3, 5]), e = ri(2, b === 2 ? 7 : 4); return num(`Solve: ${b}^x = ${b ** e}`, e, `${b}^${e} = ${b ** e}, so x = ${e}.`); },
+        () => { const k = pick([2, 3, 4]), d = pick([2, 3]), n = pick([1, 2, 3].filter(v => v !== d)); return num(`${k ** d}^(${n}/${d}) = ?`, k ** n, `Take the ${d === 2 ? 'square' : 'cube'} root first: ${k}. Then raise it to the power ${n}: ${k ** n}.`); },
+        () => pick([
+          () => mc('log(a) + log(b) = ?', 'log(ab)', ['log(a + b)', 'log(a) · log(b)', 'log(a/b)'], 'Adding logs multiplies what is inside.'),
+          () => mc('log(a) - log(b) = ?', 'log(a/b)', ['log(a - b)', 'log(ab)', 'log(b/a)'], 'Subtracting logs divides what is inside.'),
+          () => mc('log(a^n) = ?', 'n · log(a)', ['log(a) + n', 'log(na)', 'log(a)^n'], 'A power inside a log comes out in front.'),
+        ])(),
+        () => { const a = ri(1, 5), b = ri(1, 5); return num(`log₂ ${2 ** a} + log₂ ${2 ** b} = ?`, a + b, `${a} + ${b} = ${a + b}.`); },
+        () => { const b = pick([2, 3, 5, 10]), ok = rnd() < 0.5; return tf(ok ? `log${sub(b)} 1 = 0` : `log${sub(b)} ${b} = 0`, ok, `${b}^0 = 1, so log${sub(b)} 1 = 0. And log${sub(b)} ${b} = 1.`); },
+      ] },
+      { name: 'Sequences and series', tip: 'Arithmetic sequences add the same amount each time: term n = first + (n - 1) × difference. Geometric sequences multiply by the same ratio each time: term n = first × ratio^(n - 1).', gens: [
+        () => { const a = ri(1, 12), d = nz(-5, 9), n = ri(8, 20); return num(`An arithmetic sequence starts ${a}, ${a + d}, ${a + 2 * d}, ...  What is term number ${n}?`, a + (n - 1) * d, `${a} + (${n} - 1) × ${p(d)} = ${a + (n - 1) * d}.`); },
+        () => { const a = ri(1, 5), r = pick([2, 3]), n = ri(4, 6); return num(`A geometric sequence starts ${a}, ${a * r}, ${a * r * r}, ...  What is term number ${n}?`, a * r ** (n - 1), `${a} × ${r}^${n - 1} = ${a * r ** (n - 1)}.`); },
+        () => { const a = ri(1, 9), d = ri(1, 6), n = ri(5, 12); return num(`What is the sum of the first ${n} terms of ${a}, ${a + d}, ${a + 2 * d}, ...?`, n * (2 * a + (n - 1) * d) / 2, `The last term is ${a + (n - 1) * d}. Sum = ${n} × (first + last) ÷ 2 = ${n * (2 * a + (n - 1) * d) / 2}.`); },
+        () => { const a = ri(2, 6), r = ri(2, 5); return mcn(`What is the common ratio of ${a}, ${a * r}, ${a * r * r}, ...?`, r, `Divide a term by the one before it: ${a * r} ÷ ${a} = ${r}.`, [a * r - a, a]); },
+        () => { const a = ri(2, 12), d = ri(2, 7); return mc(`Which rule gives the sequence ${a}, ${a + d}, ${a + 2 * d}, ...?`, `aₙ = ${lin(d, a - d, 'n')}`, [`aₙ = ${lin(a, d, 'n')}`, `aₙ = ${lin(d, a, 'n')}`, `aₙ = ${lin(a, -d, 'n')}`, `aₙ = ${lin(d + 1, a - d - 1, 'n')}`], `It goes up by ${d}, so the rule has ${d}n. Check n = 1: ${d} + ${p(a - d)} = ${a}.`); },
+        () => { const n = pick([10, 20, 25, 40, 50, 100]); return num(`1 + 2 + 3 + ... + ${n} = ?`, n * (n + 1) / 2, `${n} × (${n} + 1) ÷ 2 = ${n * (n + 1) / 2}.`); },
+      ] },
+      { name: 'Function moves', tip: 'f(g(x)) means do g first, then f. To find an inverse, swap x and y and solve for y. y = (x - h)^2 + k is the basic parabola moved right h and up k, so its vertex is (h, k).', gens: [
+        () => { const a = ri(2, 5), b = nz(-6, 6), c = nz(-5, 5), x = ri(-3, 3); return num(`f(x) = ${lin(a, b)} and g(x) = ${poly([1, 0, c])}. What is f(g(${x}))?`, a * (x * x + c) + b, `g(${x}) = ${x * x + c}. Then f(${x * x + c}) = ${a * (x * x + c) + b}.`); },
+        () => { const a = ri(2, 7), b = nz(-9, 9), s = b < 0 ? '+' : '-', o = b < 0 ? '-' : '+', B = Math.abs(b); return mc(`What is the inverse of f(x) = ${lin(a, b)}?`, `(x ${s} ${B}) ÷ ${a}`, [`(x ${o} ${B}) ÷ ${a}`, `${a}(x ${s} ${B})`, `x ÷ ${a} ${s} ${B}`, `${a}x ${s} ${B}`], `Swap and solve: x = ${a}y ${b < 0 ? '-' : '+'} ${B}, so y = (x ${s} ${B}) ÷ ${a}.`); },
+        () => { const [h, k] = distinct(2, 1, 8).map(v => v * pick([-1, 1])); return mc(`What is the vertex of y = (x ${h < 0 ? '+' : '-'} ${Math.abs(h)})^2 ${k < 0 ? '-' : '+'} ${Math.abs(k)}?`, `(${h}, ${k})`, [`(${-h}, ${k})`, `(${h}, ${-k})`, `(${k}, ${h})`, `(${-h}, ${-k})`], `Compare with (x - h)^2 + k: h = ${h}, k = ${k}.`); },
+        () => { const n = ri(2, 9), dir = pick(['up', 'down', 'left', 'right']), all = { up: `y = x^2 + ${n}`, down: `y = x^2 - ${n}`, left: `y = (x + ${n})^2`, right: `y = (x - ${n})^2` }; return mc(`The graph of y = x^2 is moved ${n} units ${dir}. What is the new equation?`, all[dir], Object.values(all), 'Up and down change the number added outside. Left and right change x inside the bracket, with the opposite sign.'); },
+      ] },
+      { name: 'Polynomials and rational expressions', tip: 'Remainder theorem: when you divide p(x) by (x - a), the remainder is p(a). Zeros are the x values that make the polynomial 0. To simplify a fraction of polynomials, factor and cancel.', gens: [
+        () => { const a = nz(-3, 3), b = ri(-4, 4), c = ri(-6, 6), d = ri(-9, 9); return num(`What is the remainder when ${poly([1, b, c, d])} is divided by ${fac(-a)}?`, a ** 3 + b * a * a + c * a + d, `Put x = ${a} into the polynomial: ${a ** 3 + b * a * a + c * a + d}.`); },
+        () => { const rs = distinct(3, 1, 7).map(v => v * pick([-1, 1])), bad = rs.map(v => -v).filter(v => !rs.includes(v)); return pickAll(`Tap every zero of f(x) = ${rs.map(r => fac(-r)).join('')}.`, [...rs.map(v => ({ t: String(v), ok: true })), ...bad.map(v => ({ t: String(v), ok: false })), ...(bad.length ? [] : [{ t: '0', ok: false }])], 'Each bracket is zero when x has the opposite sign of the number in it.'); },
+        () => { const k = ri(2, 9); return mc(`Simplify: (x^2 - ${k * k}) ÷ (x - ${k})`, `x + ${k}`, [`x - ${k}`, `x^2 + ${k}`, `x - ${k * k}`, `x + ${k * k}`], `x^2 - ${k * k} = (x + ${k})(x - ${k}). Cancel (x - ${k}).`); },
+        () => { const n = ri(2, 5), a = nz(-4, 4), ans = n % 2 === 0 ? (a > 0 ? 'Up on both sides' : 'Down on both sides') : (a > 0 ? 'Down on the left, up on the right' : 'Up on the left, down on the right'); return mc(`What does the graph of y = ${mono(a, n)} + ... do at its far ends?`, ans, ['Up on both sides', 'Down on both sides', 'Down on the left, up on the right', 'Up on the left, down on the right'], `Degree ${n} is ${n % 2 ? 'odd' : 'even'} and the leading number is ${a > 0 ? 'positive' : 'negative'}.`); },
+      ] },
+    ],
+  });
+
+  const SIN = { 0: '0', 30: '{1/2}', 45: '{√2/2}', 60: '{√3/2}', 90: '1', 180: '0', 270: '-1' };
+  const COS = { 0: '1', 30: '{√3/2}', 45: '{√2/2}', 60: '{1/2}', 90: '0', 180: '-1', 270: '0' };
+  const RAD = [[30, '{π/6}'], [45, '{π/4}'], [60, '{π/3}'], [90, '{π/2}'], [120, '{2π/3}'], [135, '{3π/4}'], [150, '{5π/6}'], [180, 'π'], [270, '{3π/2}'], [360, '2π']];
+  const TRIG_FACTS = [
+    () => mc('sin^2 θ + cos^2 θ = ?', '1', ['0', '2', 'tan^2 θ'], 'This is the Pythagorean identity. It is true for every angle.'),
+    () => mc('tan θ = ?', '{sin θ/cos θ}', ['{cos θ/sin θ}', 'sin θ · cos θ', '{1/sin θ}'], 'Tangent is sine divided by cosine.'),
+    () => mc('In which quadrant are sine and cosine both negative?', 'III', ['I', 'II', 'IV'], 'In quadrant III both x and y are negative.'),
+    () => mc('In which quadrant is sine positive and cosine negative?', 'II', ['I', 'III', 'IV'], 'In quadrant II, x is negative and y is positive.'),
+    () => mc('What is the period of y = sin x?', '2π', ['π', '{π/2}', '4π'], 'The sine wave repeats every full turn, 2π.'),
+    () => mc('What is the largest value of y = 3 sin x?', '3', ['1', '6', '3π'], 'Sine goes from -1 to 1, so 3 sin x goes from -3 to 3.'),
+  ];
+  const DERIVS = [['sin x', 'cos x'], ['cos x', '-sin x'], ['e^x', 'e^x'], ['ln x', '{1/x}'], ['x^2', '2x'], ['x^3', '3x^2'], ['5x', '5'], ['{1/x}', '-{1/x^2}']];
+  const ANTIS = [['cos x', 'sin x + C'], ['sin x', '-cos x + C'], ['e^x', 'e^x + C'], ['{1/x}', 'ln|x| + C'], ['2x', 'x^2 + C'], ['1', 'x + C'], ['3x^2', 'x^3 + C']];
+  const nPr = (n, r) => fact(n) / fact(n - r), nCr = (n, r) => nPr(n, r) / fact(r);
+  MT.grades.push({
+    grade: 12, title: 'Pre-calculus and calculus', sections: [
+      { name: 'Unit circle', tip: 'On the unit circle, cos θ is the x value and sin θ is the y value. Full turn = 360° = 2π radians, so 180° = π. Key values: sin 30° = {1/2}, sin 45° = {√2/2}, sin 60° = {√3/2}.', gens: [
+        () => { const f = pick(['sin', 'cos']), deg = pick([0, 30, 45, 60, 90, 180, 270]), a = (f === 'sin' ? SIN : COS)[deg]; return mc(`${f} ${deg}° = ?`, a, shuffle(['0', '1', '-1', '{1/2}', '{√2/2}', '{√3/2}', '-{1/2}']), `On the unit circle at ${deg}°, the ${f === 'sin' ? 'y' : 'x'} value is ${a}.`); },
+        () => { const [deg, r] = pick(RAD); return mc(`Convert ${deg}° to radians.`, r, shuffle(RAD.map(x => x[1])), `Multiply by {π/180}: ${deg} × {π/180} = ${r}.`); },
+        () => matchOf('Match the degrees to the radians.', () => { const [d, r] = pick(RAD); return [`${d}°`, r]; }, '180° = π radians. Everything else is a fraction of that.'),
+        () => pick(TRIG_FACTS)(),
+      ] },
+      { name: 'Limits', tip: 'A limit is the value a function gets close to. For a smooth function, just plug the number in. If you get {0/0}, factor and cancel first. As x grows huge, {1/x} goes to 0.', gens: [
+        () => { const a = ri(-3, 4), b = nz(-5, 5), c = ri(-9, 9); return num(`lim (x → ${a}) of ${poly([1, b, c])} = ?`, a * a + b * a + c, `Polynomials are smooth, so plug in x = ${a}: ${a * a + b * a + c}.`); },
+        () => { const a = ri(1, 9); return num(`lim (x → ${a}) of (x^2 - ${a * a}) ÷ (x - ${a}) = ?`, 2 * a, `Factor the top: (x + ${a})(x - ${a}). Cancel (x - ${a}), leaving x + ${a}, which goes to ${2 * a}.`); },
+        () => { const r = ri(1, 4), k = ri(2, 6), q = ri(1, 9), s = ri(1, 9); return num(`lim (x → ∞) of (${poly([r * k, 0, q])}) ÷ (${poly([r, s, 0])}) = ?`, k, `Same top power on both, so use the leading numbers: ${r * k} ÷ ${r} = ${k}.`); },
+        () => pick([
+          () => { const k = ri(2, 9); return mc(`lim (x → ∞) of {${k}/x} = ?`, '0', ['∞', String(k), '1', 'Does not exist'], 'A fixed number divided by something huge gets as close to 0 as you like.'); },
+          () => mc('lim (x → 0) of {sin x/x} = ?', '1', ['0', '∞', 'Does not exist'], 'This is a famous limit: sin x and x are almost equal near 0.'),
+          () => { const k = ri(2, 9); return mc(`lim (x → ∞) of ${k}x^2 = ?`, '∞', ['0', String(k), '1'], 'The function keeps growing without any bound.'); },
+        ])(),
+      ] },
+      { name: 'Derivatives', tip: 'The derivative is the slope of a curve. Power rule: bring the power down in front, then lower the power by one. The derivative of x^3 is 3x^2. The derivative of a plain number is 0.', gens: [
+        () => { const a = ri(2, 7), n = ri(2, 6); return mc(`What is the derivative of ${mono(a, n)}?`, mono(a * n, n - 1), [mono(a, n - 1), mono(a * n, n), mono(a * (n - 1), n - 1), mono(a * n, n + 1), mono(a + n, n - 1)], `Bring the ${n} down: ${a} × ${n} = ${a * n}. Lower the power to ${n - 1}.`); },
+        () => { const a = ri(1, 6), b = nz(-9, 9), c = nz(-9, 9); return mc(`f(x) = ${poly([a, b, c])}. What is f'(x)?`, lin(2 * a, b), [lin(a, b), lin(2 * a, c), poly([2 * a, b, 0]), lin(2 * a, b + c), lin(2 * a + 1, b)], `${mono(a, 2)} becomes ${mono(2 * a, 1)}, ${mono(b, 1)} becomes ${b}, and the plain number disappears.`); },
+        () => { const a = ri(1, 5), b = nz(-8, 8), c = ri(-9, 9), x = ri(-3, 4); return num(`f(x) = ${poly([a, b, c])}. What is the slope of the tangent line at x = ${x}?`, 2 * a * x + b, `f'(x) = ${lin(2 * a, b)}. At x = ${x}: ${2 * a * x + b}.`); },
+        () => matchOf('Match each function to its derivative.', () => pick(DERIVS), 'These basic derivatives are worth memorizing.'),
+        () => { const a = ri(1, 6), b = ri(1, 12), t = ri(1, 6); return num(`A position is s(t) = ${poly([a, b, 0], 't')}. What is the velocity at t = ${t}?`, 2 * a * t + b, `Velocity is the derivative: ${lin(2 * a, b, 't')}. At t = ${t}: ${2 * a * t + b}.`); },
+      ] },
+      { name: 'Integrals', tip: 'Integrating undoes differentiating. Power rule backwards: raise the power by one, then divide by the new power, and add C. ∫ 2x dx = x^2 + C. A definite integral gives the area under the curve.', gens: [
+        () => { const a = ri(1, 6), n = ri(1, 4); return mc(`∫ ${mono(a * (n + 1), n)} dx = ?`, `${mono(a, n + 1)} + C`, [`${mono(a * (n + 1), n + 1)} + C`, `${mono(a * (n + 1) * n, n - 1)} + C`, `${mono(a, n)} + C`, `${mono(a + 1, n + 1)} + C`, `${mono(a * (n + 1) + 1, n + 1)} + C`], `Raise the power to ${n + 1} and divide by ${n + 1}: ${a * (n + 1)} ÷ ${n + 1} = ${a}.`); },
+        () => { const k = ri(1, 5), b = ri(1, 6); return num(`∫ from 0 to ${b} of ${mono(2 * k, 1)} dx = ?`, k * b * b, `The antiderivative is ${mono(k, 2)}. At ${b} it is ${k * b * b}, at 0 it is 0.`); },
+        () => { const k = ri(2, 9), a = ri(0, 5), b = a + ri(1, 6); return num(`∫ from ${a} to ${b} of ${k} dx = ?`, k * (b - a), `It is a rectangle: height ${k}, width ${b - a}. Area = ${k * (b - a)}.`); },
+        () => { const b = ri(1, 5); return num(`∫ from 0 to ${b} of 3x^2 dx = ?`, b ** 3, `The antiderivative is x^3. At ${b} it is ${b ** 3}, at 0 it is 0.`); },
+        () => matchOf('Match each function to its antiderivative.', () => pick(ANTIS), 'Check by differentiating the answer: you should get the function back.'),
+      ] },
+      { name: 'Counting and probability', tip: 'n! means n × (n - 1) × ... × 1. Use permutations when order matters and combinations when it does not. For independent events, multiply the chances: two heads in a row is {1/2} × {1/2} = {1/4}.', gens: [
+        () => { const n = ri(3, 6); return num(`${n}! = ?`, fact(n), `${range(1, n).reverse().join(' × ')} = ${fact(n)}.`); },
+        () => { const n = ri(4, 8), r = ri(2, 3); return num(`${r} people are picked from ${n} to stand in a line (order matters). How many different lines are possible?`, nPr(n, r), `${range(n - r + 1, n).reverse().join(' × ')} = ${nPr(n, r)}.`); },
+        () => { const n = ri(4, 9), r = ri(2, 3); return num(`A team of ${r} is chosen from ${n} people (order does not matter). How many different teams are possible?`, nCr(n, r), `${nPr(n, r)} ordered picks ÷ ${fact(r)} orders of each team = ${nCr(n, r)}.`); },
+        () => { const n = ri(2, 5); return mc(`You flip a fair coin ${n} times. What is the chance of all heads?`, `{1/${2 ** n}}`, [`{1/${2 * n + 1}}`, '{1/2}', fr(n, 2 ** (n + 1)), `{1/${2 ** (n + 1)}}`, `{1/${2 ** n + 2}}`], `Multiply {1/2} by itself ${n} times: {1/${2 ** n}}.`); },
+        () => { const k = ri(1, 6); return mc(`You roll two number cubes. What is the chance both show ${k}?`, '{1/36}', ['{1/6}', '{1/12}', '{1/3}', '{1/18}'], '{1/6} × {1/6} = {1/36}.'); },
+        () => { const d = pick([2, 4, 5, 10]), a = d * ri(2, 12); return num(`A game pays $${a} with probability {1/${d}} and $0 otherwise. What is the expected value, in dollars?`, a / d, `${a} × {1/${d}} = ${a / d}.`); },
+      ] },
+    ],
+  });
+})();
+
+/* Math Trail - the game: screens, puzzle play, hearts, stars and saved progress. */
+(function () {
+  const SAVE_KEY = 'mathtrail-v1';
+  const ROUND = 8, BOSS_ROUND = 10, HEARTS = 3;
+  const KIND = { choice: 'Tap the answer', input: 'Type the answer', tf: 'True or false?', compare: 'Pick the sign', order: 'Put in order', match: 'Match the pairs', pick: 'Tap all that fit', target: 'Make the number' };
+  const PRAISE = ['Correct!', 'Nice work!', 'You got it!', 'Spot on!', 'Yes!'];
+  const $ = id => document.getElementById(id);
+  const view = $('view'), app = $('app');
+
+  // ---------- saved progress (this browser only)
+  let save = { stars: {}, sound: true };
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && s.stars) save = s; } catch (e) {}
+  const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
+
+  // ---------- curriculum helpers
+  const grades = MT.grades;
+  const band = g => Math.ceil(g / 3);
+  const stops = g => {
+    const gr = grades[g - 1];
+    return [...gr.sections, { name: `Grade ${g} challenge`, boss: true, tip: `A mix of everything from Grade ${g}. Pass it to finish the grade.`, gens: gr.sections.flatMap(s => s.gens) }];
+  };
+  const starsOf = (g, s) => save.stars[MT.sectionId(g, s)] || 0;
+  const unlocked = (g, s) => s === 0 || starsOf(g, s - 1) > 0;
+  const gradeStars = g => stops(g).reduce((a, _, s) => a + starsOf(g, s), 0);
+  const totalStars = () => grades.reduce((a, gr) => a + gradeStars(gr.grade), 0);
+  const kindsOf = st => [...new Set(st.gens.slice(0, 12).map(gen => { try { return KIND[gen().kind]; } catch (e) { return null; } }).filter(Boolean))];
+
+  // ---------- text: {a/b} becomes a stacked fraction, ^ becomes a superscript
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const fmt = s => esc(s)
+    .replace(/\{([^{}\/]+)\/([^{}]+)\}/g, '<span class="fr"><span>$1</span><span>$2</span></span>')
+    .replace(/\^\(([^)]+)\)/g, '<sup>$1</sup>')
+    .replace(/\^(-?(?:\w+(?:\.\d+)?|☐))/g, '<sup>$1</sup>');
+  const starRow = (n, max = 3) => '★'.repeat(n) + `<i>${'★'.repeat(max - n)}</i>`;
+
+  // ---------- sound (tiny synth, no files)
+  let ac = null;
+  function tone(freq, at, dur, type) {
+    if (!save.sound) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + at;
+      o.type = type || 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+    } catch (e) {}
+  }
+  const sfx = {
+    right: () => { tone(660, 0, 0.1); tone(880, 0.09, 0.16); },
+    wrong: () => tone(196, 0, 0.25, 'triangle'),
+    win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, 0.2)),
+    lose: () => [330, 262, 196].forEach((f, i) => tone(f, i * 0.16, 0.24, 'triangle')),
+  };
+
+  // ---------- confetti
+  function confetti() {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = $('confetti'), ctx = c.getContext('2d');
+    c.hidden = false; c.width = innerWidth; c.height = innerHeight;
+    const cs = getComputedStyle(app), cols = ['--band1', '--band2', '--band3', '--band4', '--star'].map(v => cs.getPropertyValue(v).trim());
+    const ps = Array.from({ length: 110 }, () => ({ x: Math.random() * c.width, y: -20 - Math.random() * c.height * 0.4, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 4, s: 5 + Math.random() * 6, r: Math.random() * 6, c: cols[Math.floor(Math.random() * cols.length)] }));
+    const t0 = performance.now();
+    (function frame(t) {
+      ctx.clearRect(0, 0, c.width, c.height);
+      for (const q of ps) { q.x += q.vx; q.y += q.vy; q.r += 0.1; ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.r); ctx.fillStyle = q.c; ctx.fillRect(-q.s / 2, -q.s / 2, q.s, q.s * 0.6); ctx.restore(); }
+      if (t - t0 < 2400) requestAnimationFrame(frame); else { ctx.clearRect(0, 0, c.width, c.height); c.hidden = true; }
+    })(t0);
+  }
+
+  // ---------- chrome
+  function chrome(g) {
+    app.dataset.band = g ? band(g) : 1;
+    $('total').innerHTML = `<b>★</b> ${totalStars()}`;
+    $('soundBtn').textContent = save.sound ? 'Sound on' : 'Sound off';
+    window.scrollTo(0, 0);
+  }
+  $('soundBtn').addEventListener('click', () => { save.sound = !save.sound; persist(); $('soundBtn').textContent = save.sound ? 'Sound on' : 'Sound off'; if (save.sound) sfx.right(); });
+  $('homeBtn').addEventListener('click', () => { run = null; home(); });
+
+  // ---------- screens
+  function home() {
+    chrome(0);
+    view.innerHTML = `
+      <section class="stack">
+        <h1>Pick your grade</h1>
+        <p class="lead">Each grade is a trail of six stops. Read the tip, solve the puzzles, and pass a stop to unlock the next one. You get 3 hearts per stop.</p>
+      </section>
+      <ul class="grades">${grades.map(gr => {
+        const got = gradeStars(gr.grade), max = stops(gr.grade).length * 3;
+        return `<li><button class="grade" type="button" data-g="${gr.grade}" data-band="${band(gr.grade)}">
+          <span class="g-num">${gr.grade}</span>
+          <span class="g-body"><b>Grade ${gr.grade}</b><small>${esc(gr.title)}</small>
+          <span class="g-prog"><i style="width:${Math.round(got / max * 100)}%"></i></span>
+          <span class="g-stars"><b>★</b> ${got} / ${max}</span></span></button></li>`;
+      }).join('')}</ul>
+      <div id="resetBox"><button class="link" id="resetBtn" type="button">Reset all progress</button></div>`;
+    view.querySelectorAll('.grade').forEach(b => b.addEventListener('click', () => trail(+b.dataset.g)));
+    $('resetBtn').addEventListener('click', () => {
+      $('resetBox').innerHTML = `<div class="confirm stack"><p>Erase every star on this device? This cannot be undone.</p><div class="row"><button class="btn" id="yesReset" type="button">Erase progress</button><button class="btn" id="noReset" type="button">Keep it</button></div></div>`;
+      $('yesReset').addEventListener('click', () => { save.stars = {}; persist(); home(); });
+      $('noReset').addEventListener('click', home);
+    });
+  }
+
+  function trail(g) {
+    chrome(g);
+    const st = stops(g);
+    view.innerHTML = `
+      <section class="stack">
+        <button class="link" id="back" type="button">All grades</button>
+        <h1>Grade ${g}</h1>
+        <p class="lead">${esc(grades[g - 1].title)}. Clear each stop in order to reach the challenge at the end.</p>
+      </section>
+      <ol class="trail">${st.map((s, i) => {
+        const got = starsOf(g, i), open = unlocked(g, i), cls = got ? 'done' : open ? 'open' : 'locked';
+        return `<li class="stop ${cls}">
+          <span class="pin">${s.boss ? '★' : i + 1}</span>
+          <div><h2>${esc(s.name)}</h2><small>${open ? esc(kindsOf(s).join(' · ')) : 'Pass the stop before this one to unlock it'}</small>${got ? `<p class="st">${starRow(got)}</p>` : ''}</div>
+          <button class="btn ${open && !got ? 'main' : ''}" type="button" data-s="${i}" ${open ? '' : 'disabled'}>${got ? 'Play again' : open ? 'Start' : 'Locked'}</button></li>`;
+      }).join('')}</ol>`;
+    $('back').addEventListener('click', home);
+    view.querySelectorAll('.stop .btn').forEach(b => b.addEventListener('click', () => lesson(g, +b.dataset.s)));
+  }
+
+  function lesson(g, s) {
+    chrome(g);
+    const st = stops(g)[s], n = st.boss ? BOSS_ROUND : ROUND;
+    view.innerHTML = `
+      <button class="link" id="back" type="button">Grade ${g} trail</button>
+      <article class="panel">
+        <p class="label">Stop ${s + 1} of ${stops(g).length} · Learn it first</p>
+        <h1>${esc(st.name)}</h1>
+        <p class="tip">${fmt(st.tip)}</p>
+        <p class="rules">${n} puzzles. You have ${HEARTS} hearts, and a wrong answer costs one. Finish with at least one heart to pass.</p>
+        <div class="row"><button class="btn main" id="go" type="button">Start puzzles</button></div>
+      </article>`;
+    $('back').addEventListener('click', () => trail(g));
+    $('go').addEventListener('click', () => start(g, s));
+    $('go').focus({ preventScroll: true });
+  }
+
+  // ---------- a run of puzzles
+  let run = null;
+  function start(g, s) {
+    const st = stops(g)[s];
+    run = { g, s, st, qs: MT.round(st.gens, st.boss ? BOSS_ROUND : ROUND), i: 0, hearts: HEARTS, right: 0, streak: 0, marks: [], done: false };
+    puzzle();
+  }
+
+  function puzzle() {
+    const { g, qs, i } = run, q = qs[i];
+    run.done = false; run.key = null;
+    chrome(g);
+    view.innerHTML = `
+      <div class="hud">
+        <button class="link" id="quit" type="button">Quit</button>
+        <ol class="dots" aria-label="Progress">${qs.map((_, k) => `<li class="${k < i ? (run.marks[k] ? 'ok' : 'no') : k === i ? 'now' : ''}"></li>`).join('')}</ol>
+        <span class="hearts" aria-label="${run.hearts} hearts left">${'♥'.repeat(run.hearts)}<i>${'♥'.repeat(HEARTS - run.hearts)}</i></span>
+      </div>
+      <article class="panel">
+        <p class="label">Puzzle ${i + 1} of ${qs.length} · ${KIND[q.kind]}</p>
+        <h1 class="q">${fmt(q.q)}</h1>
+        ${q.fig ? `<div class="figbox">${q.fig}</div>` : ''}
+        <div id="area" class="stack"></div>
+        <div id="fb" aria-live="polite"></div>
+      </article>`;
+    $('quit').addEventListener('click', () => { run = null; trail(g); });
+    BUILD[q.kind](q, $('area'));
+  }
+
+  // called once per puzzle with the verdict
+  function grade(ok, answerText) {
+    if (!run || run.done) return;
+    run.done = true; run.marks[run.i] = ok;
+    const q = run.qs[run.i];
+    if (ok) { run.right++; run.streak++; sfx.right(); } else { run.hearts--; run.streak = 0; sfx.wrong(); }
+    const last = run.i === run.qs.length - 1, out = run.hearts === 0;
+    view.querySelector('.hearts').innerHTML = `${'♥'.repeat(run.hearts)}<i>${'♥'.repeat(HEARTS - run.hearts)}</i>`;
+    view.querySelector('.dots .now').className = ok ? 'ok' : 'no';
+    $('fb').innerHTML = `<div class="feedback ${ok ? '' : 'no'}">
+      <p class="verdict">${ok ? PRAISE[Math.floor(Math.random() * PRAISE.length)] + (run.streak >= 3 ? ` ${run.streak} in a row!` : '') : 'Not quite.'}</p>
+      ${!ok && answerText ? `<p><b>Answer:</b> ${fmt(answerText)}</p>` : ''}
+      ${q.why ? `<p>${fmt(q.why)}</p>` : ''}
+      <button class="btn main" id="next" type="button">${out || last ? 'See how you did' : 'Next puzzle'}</button></div>`;
+    $('next').addEventListener('click', () => { if (out || last) finish(); else { run.i++; puzzle(); } });
+    $('next').focus({ preventScroll: true });
+    $('fb').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function finish() {
+    const { g, s, st, qs, hearts, right } = run, passed = hearts > 0, id = MT.sectionId(g, s), all = stops(g);
+    if (passed) { save.stars[id] = Math.max(save.stars[id] || 0, hearts); persist(); sfx.win(); confetti(); } else sfx.lose();
+    chrome(g);
+    const lastStop = s === all.length - 1;
+    view.innerHTML = passed ? `
+      <article class="panel">
+        <p class="label">Grade ${g} · ${esc(st.name)}</p>
+        <h1>${lastStop ? `Grade ${g} complete!` : 'Stop cleared!'}</h1>
+        <p class="bigstars pop">${starRow(hearts)}</p>
+        <p>You got ${right} of ${qs.length} right and kept ${hearts} ${hearts === 1 ? 'heart' : 'hearts'}.${hearts < 3 ? ' Play again to try for 3 stars.' : ''}</p>
+        <div class="row">
+          ${lastStop ? (g < 12 ? '<button class="btn main" id="a" type="button">On to Grade ' + (g + 1) + '</button>' : '<button class="btn main" id="a" type="button">Back to all grades</button>') : `<button class="btn main" id="a" type="button">Next stop: ${esc(all[s + 1].name)}</button>`}
+          <button class="btn" id="b" type="button">Play again</button><button class="btn" id="c" type="button">Grade ${g} trail</button>
+        </div>
+      </article>` : `
+      <article class="panel">
+        <p class="label">Grade ${g} · ${esc(st.name)}</p>
+        <h1>Out of hearts</h1>
+        <p>You got ${right} right before the hearts ran out. Read the tip once more, then have another go. The next stop stays locked until you pass this one.</p>
+        <p class="tip">${fmt(st.tip)}</p>
+        <div class="row"><button class="btn main" id="b" type="button">Try again</button><button class="btn" id="c" type="button">Grade ${g} trail</button></div>
+      </article>`;
+    run = null;
+    if ($('a')) $('a').addEventListener('click', () => (lastStop ? (g < 12 ? trail(g + 1) : home()) : lesson(g, s + 1)));
+    $('b').addEventListener('click', () => start(g, s));
+    $('c').addEventListener('click', () => trail(g));
+    ($('a') || $('b')).focus({ preventScroll: true });
+  }
+
+  // ---------- puzzle kinds.  Each builds its controls and calls grade() once.
+  const lock = root => root.querySelectorAll('button').forEach(b => { b.disabled = true; });
+  const BUILD = {
+    choice(q, area) {
+      const long = q.opts.some(o => o.replace(/[{}]/g, '').length > 14);
+      area.innerHTML = `<div class="opts ${long ? 'long' : ''}">${q.opts.map((o, i) => `<button class="opt" type="button" data-i="${i}">${fmt(o)}</button>`).join('')}</div>`;
+      const btns = [...area.querySelectorAll('.opt')];
+      const choose = i => { if (run.done) return; lock(area); btns[q.a].classList.add('right'); if (i !== q.a) btns[i].classList.add('wrong'); grade(i === q.a, q.opts[q.a]); };
+      btns.forEach((b, i) => b.addEventListener('click', () => choose(i)));
+      run.key = e => { const i = '1234'.indexOf(e.key); if (i >= 0 && i < btns.length) choose(i); };
+    },
+    tf(q, area) {
+      area.innerHTML = `<div class="opts"><button class="opt" type="button">True</button><button class="opt" type="button">False</button></div>`;
+      const btns = [...area.querySelectorAll('.opt')];
+      const choose = v => { if (run.done) return; lock(area); btns[q.a ? 0 : 1].classList.add('right'); if (v !== q.a) btns[v ? 0 : 1].classList.add('wrong'); grade(v === q.a, q.a ? 'True' : 'False'); };
+      btns[0].addEventListener('click', () => choose(true)); btns[1].addEventListener('click', () => choose(false));
+      run.key = e => { const k = e.key.toLowerCase(); if (k === 't') choose(true); if (k === 'f') choose(false); };
+    },
+    compare(q, area) {
+      const signs = ['<', '=', '>'];
+      area.innerHTML = `<div class="cmp"><span>${fmt(q.L)}</span><span class="slot" id="slot">?</span><span>${fmt(q.R)}</span></div>
+        <div class="opts three">${signs.map(s => `<button class="opt" type="button">${esc(s)}</button>`).join('')}</div>`;
+      const btns = [...area.querySelectorAll('.opt')];
+      const choose = i => { if (run.done) return; lock(area); $('slot').textContent = q.a; btns[signs.indexOf(q.a)].classList.add('right'); if (signs[i] !== q.a) btns[i].classList.add('wrong'); grade(signs[i] === q.a, `${q.L} ${q.a} ${q.R}`); };
+      btns.forEach((b, i) => b.addEventListener('click', () => choose(i)));
+      run.key = e => { const i = ['<', '=', '>'].indexOf(e.key); if (i >= 0) choose(i); };
+    },
+    input(q, area) {
+      let typed = '';
+      area.innerHTML = `<div class="center"><div class="typed empty" id="typed">Type your answer</div>
+        <div class="keys">${['7', '8', '9', '⌫', '4', '5', '6', '-', '1', '2', '3', '/', '0', '.'].map(k => `<button type="button" data-k="${k}" aria-label="${k === '⌫' ? 'Delete' : k === '-' ? 'Minus' : k}">${k === '-' ? '−' : k}</button>`).join('')}</div>
+        <button class="btn main" id="check" type="button">Check</button></div>`;
+      const show = () => { const el = $('typed'); el.textContent = typed ? typed.replace(/-/g, '−') : 'Type your answer'; el.classList.toggle('empty', !typed); };
+      const press = k => {
+        if (run.done) return;
+        if (k === '⌫') typed = typed.slice(0, -1);
+        else if (k === '-') typed = typed.startsWith('-') ? typed.slice(1) : '-' + typed;
+        else if (typed.length < 10 && !((k === '.' || k === '/') && /[./]$/.test(typed))) typed += k;
+        show();
+      };
+      const check = () => {
+        if (run.done) return;
+        const v = MT.value(typed);
+        if (Number.isNaN(v)) { $('typed').classList.remove('shake'); void $('typed').offsetWidth; $('typed').classList.add('shake'); return; }
+        lock(area);
+        grade(Math.abs(v - MT.value(q.a)) < 1e-6, MT.showAnswer(q.a));
+      };
+      area.querySelectorAll('.keys button').forEach(b => b.addEventListener('click', () => press(b.dataset.k)));
+      $('check').addEventListener('click', check);
+      run.key = e => { if (/^[0-9./-]$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('⌫'); else if (e.key === 'Enter') { e.preventDefault(); check(); } };
+    },
+    order(q, area) {
+      const picked = [];
+      area.innerHTML = `<p class="hint">Tap them in order. Tap one in the top row to put it back.</p><div class="tiles slots" id="slots"></div><div class="tiles" id="pool"></div>
+        <div class="row"><button class="btn main" id="check" type="button" disabled>Check</button></div>`;
+      const draw = () => {
+        $('slots').innerHTML = picked.map(i => `<button class="tile sel" type="button" data-i="${i}">${fmt(q.items[i].t)}</button>`).join('');
+        $('pool').innerHTML = q.items.map((it, i) => (picked.includes(i) ? '' : `<button class="tile" type="button" data-i="${i}">${fmt(it.t)}</button>`)).join('');
+        $('check').disabled = picked.length !== q.items.length;
+        $('pool').querySelectorAll('.tile').forEach(b => b.addEventListener('click', () => { if (!run.done) { picked.push(+b.dataset.i); draw(); } }));
+        $('slots').querySelectorAll('.tile').forEach(b => b.addEventListener('click', () => { if (!run.done) { picked.splice(picked.indexOf(+b.dataset.i), 1); draw(); } }));
+      };
+      draw();
+      $('check').addEventListener('click', () => {
+        const ok = picked.every((i, k) => k === 0 || q.items[picked[k - 1]].v <= q.items[i].v);
+        $('slots').querySelectorAll('.tile').forEach(b => b.classList.add(ok ? 'right' : 'wrong'));
+        lock(area); grade(ok, '');
+      });
+    },
+    match(q, area) {
+      const right = MT.shuffle(q.pairs.map((pr, i) => i));
+      let sel = null, miss = false, left = q.pairs.length;
+      area.innerHTML = `<p class="hint">Tap one on the left, then its partner on the right.</p><div class="cols">${q.pairs.map((pr, k) =>
+        `<button class="tile" type="button" data-side="L" data-i="${k}">${fmt(pr[0])}</button><button class="tile" type="button" data-side="R" data-i="${right[k]}">${fmt(q.pairs[right[k]][1])}</button>`).join('')}</div>`;
+      const btns = [...area.querySelectorAll('.tile')];
+      btns.forEach(b => b.addEventListener('click', () => {
+        if (run.done || b.classList.contains('paired')) return;
+        if (b.dataset.side === 'L') { btns.forEach(x => x.classList.remove('sel')); sel = b; b.classList.add('sel'); return; }
+        if (!sel) return;
+        if (sel.dataset.i === b.dataset.i) {
+          [sel, b].forEach(x => { x.classList.remove('sel'); x.classList.add('paired'); x.disabled = true; });
+          sel = null; left--;
+          if (left === 0) grade(!miss, '');
+        } else {
+          miss = true; b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+          if (!area.querySelector('.missnote')) area.insertAdjacentHTML('beforeend', '<p class="hint missnote">That pair does not match. Keep going to finish the puzzle.</p>');
+        }
+      }));
+    },
+    pick(q, area) {
+      area.innerHTML = `<div class="tiles">${q.tiles.map((t, i) => `<button class="tile" type="button" data-i="${i}" aria-pressed="false">${fmt(t.t)}</button>`).join('')}</div>
+        <div class="row"><button class="btn main" id="check" type="button">Check</button></div>`;
+      const btns = [...area.querySelectorAll('.tile')];
+      btns.forEach(b => b.addEventListener('click', () => { if (!run.done) { const on = b.classList.toggle('sel'); b.setAttribute('aria-pressed', on); } }));
+      $('check').addEventListener('click', () => {
+        const ok = btns.every((b, i) => b.classList.contains('sel') === q.tiles[i].ok);
+        btns.forEach((b, i) => { if (q.tiles[i].ok) b.classList.add('right'); else if (b.classList.contains('sel')) b.classList.add('wrong'); });
+        lock(area); grade(ok, q.tiles.filter(t => t.ok).map(t => t.t).join(',  '));
+      });
+    },
+    target(q, area) {
+      area.innerHTML = `<div class="tiles">${q.tiles.map((t, i) => `<button class="tile" type="button" data-i="${i}" aria-pressed="false">${t}</button>`).join('')}</div>
+        <p class="sum" id="sum">Total so far: 0</p><div class="row"><button class="btn main" id="check" type="button">Check</button></div>`;
+      const btns = [...area.querySelectorAll('.tile')];
+      const total = () => btns.reduce((a, b, i) => a + (b.classList.contains('sel') ? q.tiles[i] : 0), 0);
+      btns.forEach(b => b.addEventListener('click', () => { if (!run.done) { const on = b.classList.toggle('sel'); b.setAttribute('aria-pressed', on); $('sum').textContent = `Total so far: ${total()}`; } }));
+      $('check').addEventListener('click', () => { const ok = total() === q.T; btns.forEach(b => { if (b.classList.contains('sel')) b.classList.add(ok ? 'right' : 'wrong'); }); lock(area); grade(ok, ''); });
+    },
+  };
+
+  window.addEventListener('keydown', e => {
+    if (!run || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (run.done) return;                       // Enter on the focused Next button moves on by itself
+    if (run.key) run.key(e);
+  });
+
+  // small hook used by automated tests
+  window.MathTrail = { get run() { return run; }, home, trail, lesson, start, grade, save: () => save };
+  home();
+})();
+
+</script>
+</body>
+</html>
